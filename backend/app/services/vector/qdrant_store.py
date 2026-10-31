@@ -133,9 +133,7 @@ class QdrantStore:
     def scroll_all(self, name: str, with_payload: bool = True) -> list[dict]:
         out, offset = [], None
         while True:
-            recs, offset = self._wrap(
-                self.client.scroll, collection_name=name, limit=256, offset=offset, with_payload=with_payload
-            )
+            recs, offset = self._wrap(self.client.scroll, collection_name=name, limit=256, offset=offset, with_payload=with_payload)
             out.extend({"id": str(r.id), "payload": r.payload or {}} for r in recs)
             if offset is None:
                 return out

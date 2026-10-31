@@ -21,9 +21,7 @@ class ConfigError(RuntimeError):
 
 
 class Settings(BaseSettings):
-    model_config = SettingsConfigDict(
-        env_file=str(REPO_ROOT / ".env"), env_file_encoding="utf-8", extra="ignore", case_sensitive=True
-    )
+    model_config = SettingsConfigDict(env_file=str(REPO_ROOT / ".env"), env_file_encoding="utf-8", extra="ignore", case_sensitive=True)
 
     # Application
     APP_ENV: Literal["development", "test", "production"] = "development"
@@ -133,9 +131,7 @@ def load_settings(**overrides) -> Settings:
         missing, invalid = [], []
         for err in exc.errors():
             name = str(err["loc"][0]) if err["loc"] else "?"
-            (missing if err["type"] == "missing" else invalid).append(
-                name if err["type"] == "missing" else f"{name}: {err['msg']}"
-            )
+            (missing if err["type"] == "missing" else invalid).append(name if err["type"] == "missing" else f"{name}: {err['msg']}")
         parts = []
         if missing:
             parts.append("Missing required environment variables: " + ", ".join(sorted(missing)))
@@ -150,4 +146,3 @@ def load_settings(**overrides) -> Settings:
 @lru_cache
 def get_settings() -> Settings:
     return load_settings()
-

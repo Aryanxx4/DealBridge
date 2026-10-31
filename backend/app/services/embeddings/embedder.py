@@ -57,9 +57,7 @@ class Embedder:
         out = []
         for v in vectors:
             if len(v) != self.dimension:
-                raise EmbeddingUnavailable(
-                    f"Embedding dimension {len(v)} does not match EMBEDDING_DIMENSION={self.dimension}."
-                )
+                raise EmbeddingUnavailable(f"Embedding dimension {len(v)} does not match EMBEDDING_DIMENSION={self.dimension}.")
             out.append([float(x) for x in v])
         return out
 

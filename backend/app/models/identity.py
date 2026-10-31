@@ -27,8 +27,6 @@ class User(TimestampMixin, Base):
     display_name: Mapped[str] = mapped_column(String(200), nullable=False)
     email: Mapped[str] = mapped_column(String(320), nullable=False, unique=True)
     role: Mapped[str] = mapped_column(String(20), nullable=False)
-    organization_id: Mapped[uuid.UUID] = mapped_column(
-        UUID(as_uuid=True), ForeignKey("organizations.id"), nullable=False, index=True
-    )
+    organization_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), ForeignKey("organizations.id"), nullable=False, index=True)
 
     organization: Mapped[Organization] = relationship(lazy="joined")

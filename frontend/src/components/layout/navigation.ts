@@ -7,4 +7,6 @@ export interface NavItem {
 }
 
 // Only features that exist are listed (no placeholder pages). Items are added as each gate lands.
-export const NAV_ITEMS: NavItem[] = [];
+export const NAV_ITEMS: NavItem[] = [
+  { label: "Knowledge", to: "/admin/knowledge", roles: ["ADMIN"] },
+];

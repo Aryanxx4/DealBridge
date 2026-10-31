@@ -21,9 +21,7 @@ class Job(TimestampMixin, Base):
     status: Mapped[str] = mapped_column(String(20), nullable=False, default=JobStatus.QUEUED.value)
     # FK to assessments is added in the G4 migration (table created there).
     assessment_id: Mapped[uuid.UUID | None] = mapped_column(UUID(as_uuid=True), nullable=True, index=True)
-    created_by: Mapped[uuid.UUID | None] = mapped_column(
-        UUID(as_uuid=True), ForeignKey("users.id"), nullable=True, index=True
-    )
+    created_by: Mapped[uuid.UUID | None] = mapped_column(UUID(as_uuid=True), ForeignKey("users.id"), nullable=True, index=True)
     progress_done: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
     progress_total: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
     progress_message: Mapped[str | None] = mapped_column(Text)
@@ -37,9 +35,7 @@ class Job(TimestampMixin, Base):
 class AuditEvent(CreatedOnlyMixin, Base):
     __tablename__ = "audit_events"
 
-    actor_user_id: Mapped[uuid.UUID | None] = mapped_column(
-        UUID(as_uuid=True), ForeignKey("users.id"), nullable=True, index=True
-    )
+    actor_user_id: Mapped[uuid.UUID | None] = mapped_column(UUID(as_uuid=True), ForeignKey("users.id"), nullable=True, index=True)
     actor_role: Mapped[str | None] = mapped_column(String(20))
     action: Mapped[str] = mapped_column(String(64), nullable=False, index=True)
     entity_type: Mapped[str] = mapped_column(String(64), nullable=False)
@@ -55,9 +51,7 @@ class KnowledgeState(Base):
     id: Mapped[int] = mapped_column(Integer, primary_key=True)
     epoch: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now(), nullable=False)
-    updated_at: Mapped[datetime] = mapped_column(
-        DateTime(timezone=True), server_default=func.now(), onupdate=func.now(), nullable=False
-    )
+    updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now(), onupdate=func.now(), nullable=False)
 
 
 class VectorCollection(TimestampMixin, Base):

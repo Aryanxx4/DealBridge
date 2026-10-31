@@ -5,6 +5,7 @@ not a statement about IOMETE's real staff.
 """
 
 import _bootstrap  # noqa: F401
+
 from app.db.session import session_scope
 from app.services.seed import seed_identities
 

@@ -13,9 +13,9 @@ addopts = "-p no:cacheprovider"
 filterwarnings = ["ignore::DeprecationWarning"]
 
 [tool.ruff]
-line-length = 120
+line-length = 140
 target-version = "py312"
 
 [tool.ruff.lint]
 select = ["E", "F", "I", "B", "UP"]
-ignore = ["B008"]
+ignore = ["B008", "E501"]
