@@ -71,3 +71,16 @@
 - UI: buyer dashboard with a new-assessment dialog, and the workspace Requirements tab (PDF drop zone with scanned alert and job progress, intake chat with diff proposal cards, zod guided form with priorities, review table with inline edit, selects, source tooltip with unverified warning, clarification "Keep as written", confirm, remove, restore, history drawer, add row, confirm all, sticky counts footer). Typecheck, lint and build pass, and a screenshot with real uploaded documents was checked.
 
 **Pending (needs LLM_API_KEY):** the G4 check that the demo PDF yields at least seven requirements, with one flagged for clarification.
+
+## 2026-11-01 01:25 IST — G5 Assessment engine ✅ (real-LLM manual run pending the key)
+**Works (verified by command output):**
+- Migration `0006_g5`: immutable assessment_versions, requirement_assessments and evidence_references (with role).
+- Per-requirement retrieval: two queries (the text, and the category label plus text), both collections with the mandatory filter, merged by chunk with the best score, threshold 0.60, top 8. No candidates gives UNKNOWN without an LLM call.
+- Judge prompt (judge.v1) with the five statuses defined as in REQUIREMENTS §4.4. Deterministic guardrails G1–G8, each downgrade recorded in `guardrail_notes`.
+- ANALYZE job: ThreadPoolExecutor(4) with progress "Assessing REQ-00n (n of N)", blockers (CRITICAL/HIGH and NOT_SUPPORTED/PARTIALLY_SUPPORTED/UNKNOWN), deduplicated aggregates, and an LLM summary from structured results only. No fit percentage. On failure: no version, previous status restored.
+- Versions and comparison (ADDED, REMOVED, TEXT_CHANGED, PRIORITY_CHANGED, STATUS_CHANGED, UNCHANGED), pending changes, changes since the previous version, the knowledge-updated flag, open_ticket and answer_available per requirement.
+- `pytest`: 90 passed. This includes all six §15.3 item-4 guardrail tests, the item-3 quote rules, and the item-10 tests (new version keeps the previous one, edit marks STALE and the re-run creates version 2, failure creates no version, comparison).
+- UI: Run/Re-run with an excluded-count warning and a disabled explanation, job progress, the Results tab (version selector, stale/pending/knowledge banners, summary with five status tiles, blockers, next steps, filters and search, a detail sheet with evidence cards, guardrail notes, conflict alert, seller-response section and "Ask the product team"), and the Versions tab with comparison. Typecheck, lint and build pass.
+- Demo scanned PDF shrunk to 136 KB (JPEG pages).
+
+**Pending (needs LLM_API_KEY):** a manual run on the demo requirements to observe real statuses.

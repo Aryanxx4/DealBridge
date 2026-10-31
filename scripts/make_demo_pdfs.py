@@ -96,9 +96,9 @@ def build_scanned(src: Path, dst: Path) -> None:
     doc = pymupdf.open(src)
     out = pymupdf.open()
     for page in doc:
-        pix = page.get_pixmap(dpi=110)
+        pix = page.get_pixmap(dpi=100)
         new = out.new_page(width=page.rect.width, height=page.rect.height)
-        new.insert_image(new.rect, stream=pix.tobytes("png"))
+        new.insert_image(new.rect, stream=pix.tobytes("jpeg", jpg_quality=70))
     out.save(dst)
     out.close()
     doc.close()

@@ -378,3 +378,97 @@ export interface IntakeMessage {
   structured?: { clarifying_questions?: string[]; assumptions_noted?: string[] } | null;
   created_at: string;
 }
+
+export type FitStatus = "SUPPORTED" | "PARTIALLY_SUPPORTED" | "NEEDS_VALIDATION" | "NOT_SUPPORTED" | "UNKNOWN";
+
+export interface EvidenceItem {
+  rank: number;
+  role: "SUPPORTS" | "LIMITS" | "RELATED";
+  collection: "OFFICIAL" | "RESOLVED";
+  label: "Official documentation" | "Expert-verified answer";
+  knowledge_id: string;
+  chunk_id: string;
+  title: string;
+  heading_path: string | null;
+  source_url: string | null;
+  source_document: string | null;
+  excerpt: string;
+  version: number | null;
+  last_verified_at: string | null;
+  approved_at: string | null;
+}
+
+export interface SellerResponse {
+  id: string;
+  seller_name: string;
+  seller_org: string;
+  assertion: "NONE" | "CONFIRMS_SUPPORT" | "CONFIRMS_LIMITATION" | "NEEDS_INFO_FROM_BUYER";
+  body: string;
+  created_at: string;
+  version_no: number;
+}
+
+export interface RequirementResult {
+  requirement_id: string;
+  display_id: string;
+  text: string;
+  original_text: string | null;
+  category: RequirementCategory;
+  priority: Priority;
+  source_type: string | null;
+  source_quote: string | null;
+  source_page: number | null;
+  status: FitStatus;
+  explanation: { meaning?: string; established?: string; unverified?: string; next_step?: string };
+  supported_part: string | null;
+  unestablished_part: string | null;
+  assumptions: string[];
+  missing_information: string[];
+  questions_for_seller: string[];
+  has_conflict: boolean;
+  conflict_description: string | null;
+  is_blocker: boolean;
+  guardrail_notes: string[];
+  candidate_count: number | null;
+  evidence: EvidenceItem[];
+  open_ticket: { id: string; display_id: string; status: TicketStatus } | null;
+  answer_available: boolean;
+  seller_responses: SellerResponse[];
+}
+
+export interface VersionChange {
+  requirement_id: string;
+  display_id: string;
+  change: "ADDED" | "REMOVED" | "TEXT_CHANGED" | "PRIORITY_CHANGED" | "STATUS_CHANGED" | "UNCHANGED";
+  previous_text: string | null;
+  new_text: string | null;
+  previous_priority: Priority | null;
+  new_priority: Priority | null;
+  previous_status: FitStatus | null;
+  new_status: FitStatus | null;
+}
+
+export interface AssessmentResults {
+  assessment: { id: string; title: string; status: AssessmentStatus; context: Assessment["context"] };
+  version: { version_no: number; analyzed_at: string; requirement_set_revision: number; knowledge_epoch: number; model: string | null };
+  summary: {
+    executive_summary: string;
+    status_counts: Record<FitStatus, number>;
+    blockers: string[];
+    next_steps: string[];
+    assumptions: string[];
+    missing_information: string[];
+    questions_for_seller: string[];
+  };
+  knowledge_updated: boolean;
+  changes_since_previous: VersionChange[] | null;
+  requirements: RequirementResult[];
+}
+
+export interface VersionRow {
+  version_no: number;
+  analyzed_at: string;
+  requirement_set_revision: number;
+  status_counts: Record<FitStatus, number>;
+  requirement_count: number;
+}

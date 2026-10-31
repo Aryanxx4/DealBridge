@@ -5,7 +5,7 @@ from __future__ import annotations
 import uuid
 from datetime import datetime
 
-from sqlalchemy import Boolean, DateTime, ForeignKey, Integer, String, Text, UniqueConstraint
+from sqlalchemy import Boolean, DateTime, Float, ForeignKey, Integer, String, Text, UniqueConstraint
 from sqlalchemy.dialects.postgresql import JSONB, UUID
 from sqlalchemy.orm import Mapped, mapped_column
 
@@ -104,3 +104,77 @@ class ChangeProposal(TimestampMixin, Base):
     resolved_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
     applied_op_indexes: Mapped[list] = mapped_column(JSONB, nullable=False, default=list)
     result: Mapped[dict | None] = mapped_column(JSONB)
+
+
+class AssessmentVersion(TimestampMixin, Base):
+    """Immutable after creation: one row per analysis run."""
+
+    __tablename__ = "assessment_versions"
+    __table_args__ = (UniqueConstraint("assessment_id", "version_no", name="uq_assessment_versions_assessment_version"),)
+
+    assessment_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), ForeignKey("assessments.id"), nullable=False, index=True)
+    version_no: Mapped[int] = mapped_column(Integer, nullable=False)
+    requirement_set_revision: Mapped[int] = mapped_column(Integer, nullable=False)
+    requirements_snapshot: Mapped[list] = mapped_column(JSONB, nullable=False)
+    knowledge_epoch: Mapped[int] = mapped_column(Integer, nullable=False)
+    summary: Mapped[dict] = mapped_column(JSONB, nullable=False)
+    model: Mapped[str | None] = mapped_column(String(100))
+    prompt_versions: Mapped[dict] = mapped_column(JSONB, nullable=False, default=dict)
+    job_id: Mapped[uuid.UUID | None] = mapped_column(UUID(as_uuid=True), ForeignKey("jobs.id"), index=True)
+    analyzed_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+
+
+class RequirementAssessment(TimestampMixin, Base):
+    __tablename__ = "requirement_assessments"
+    __table_args__ = (
+        UniqueConstraint("version_id", "requirement_id", name="uq_requirement_assessments_version_requirement"),
+        enum_check("status", ["SUPPORTED", "PARTIALLY_SUPPORTED", "NEEDS_VALIDATION", "NOT_SUPPORTED", "UNKNOWN"]),
+    )
+
+    version_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), ForeignKey("assessment_versions.id"), nullable=False, index=True)
+    requirement_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), ForeignKey("requirements.id"), nullable=False, index=True)
+    display_id: Mapped[str] = mapped_column(String(20), nullable=False)
+    requirement_text: Mapped[str] = mapped_column(Text, nullable=False)
+    category: Mapped[str] = mapped_column(String(40), nullable=False)
+    priority: Mapped[str] = mapped_column(String(20), nullable=False)
+    status: Mapped[str] = mapped_column(String(30), nullable=False)
+    explanation: Mapped[dict] = mapped_column(JSONB, nullable=False, default=dict)
+    supported_part: Mapped[str | None] = mapped_column(Text)
+    unestablished_part: Mapped[str | None] = mapped_column(Text)
+    assumptions: Mapped[list] = mapped_column(JSONB, nullable=False, default=list)
+    missing_information: Mapped[list] = mapped_column(JSONB, nullable=False, default=list)
+    questions_for_seller: Mapped[list] = mapped_column(JSONB, nullable=False, default=list)
+    has_conflict: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False)
+    conflict_description: Mapped[str | None] = mapped_column(Text)
+    is_blocker: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False)
+    guardrail_notes: Mapped[list] = mapped_column(JSONB, nullable=False, default=list)
+    retrieval_summary: Mapped[dict] = mapped_column(JSONB, nullable=False, default=dict)
+    model: Mapped[str | None] = mapped_column(String(100))
+    prompt_version: Mapped[str | None] = mapped_column(String(50))
+    assessed_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+
+
+class EvidenceReference(TimestampMixin, Base):
+    __tablename__ = "evidence_references"
+    __table_args__ = (
+        enum_check("collection", ["OFFICIAL", "RESOLVED"]),
+        enum_check("role", ["SUPPORTS", "LIMITS", "RELATED"]),
+    )
+
+    requirement_assessment_id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True), ForeignKey("requirement_assessments.id"), nullable=False, index=True
+    )
+    rank: Mapped[int] = mapped_column(Integer, nullable=False)
+    role: Mapped[str] = mapped_column(String(20), nullable=False)
+    collection: Mapped[str] = mapped_column(String(20), nullable=False)
+    knowledge_id: Mapped[str] = mapped_column(String(200), nullable=False)
+    chunk_id: Mapped[str] = mapped_column(String(100), nullable=False)
+    source_title: Mapped[str] = mapped_column(Text, nullable=False)
+    heading_path: Mapped[str | None] = mapped_column(Text)
+    source_url: Mapped[str | None] = mapped_column(Text)
+    source_document: Mapped[str | None] = mapped_column(Text)
+    source_label: Mapped[str] = mapped_column(String(40), nullable=False)
+    excerpt: Mapped[str] = mapped_column(Text, nullable=False)
+    knowledge_version: Mapped[int | None] = mapped_column(Integer)
+    last_verified_at: Mapped[str | None] = mapped_column(String(40))
+    relevance_score: Mapped[float | None] = mapped_column(Float)
