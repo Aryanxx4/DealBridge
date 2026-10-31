@@ -1,0 +1,21 @@
+[project]
+name = "dealbridge-backend"
+version = "0.1.0"
+requires-python = ">=3.11"
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+markers = [
+  "integration: needs real PostgreSQL, Qdrant and the local embedding model",
+  "llm: calls the real LLM API; skipped when LLM_API_KEY is empty",
+]
+addopts = "-p no:cacheprovider"
+filterwarnings = ["ignore::DeprecationWarning"]
+
+[tool.ruff]
+line-length = 120
+target-version = "py312"
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "B", "UP"]
+ignore = ["B008"]
