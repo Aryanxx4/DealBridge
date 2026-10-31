@@ -24,7 +24,7 @@ export function AppShell() {
         Demo identities only. This is not authentication.
       </div>
       <header className="sticky top-0 z-40 border-b bg-card/95 backdrop-blur">
-        <div className="mx-auto flex h-14 max-w-7xl items-center gap-4 px-4">
+        <div className="mx-auto flex h-14 max-w-7xl items-center gap-2 px-4 lg:gap-4">
           <Link to="/" className="flex items-center gap-2 font-semibold text-slate-900">
             <img src="/favicon.svg" alt="" className="size-7" />
             DealBridge

@@ -14,7 +14,7 @@ export function RoleSwitcher() {
       <DropdownMenuTrigger asChild>
         <Button variant="outline" size="sm" aria-label="Switch demo identity">
           <UserRound aria-hidden />
-          <span className="max-w-[10rem] truncate">{user ? `${user.display_name} · ${ROLE_LABEL[user.role]}` : "Choose identity"}</span>
+          <span className="max-w-[7rem] truncate lg:max-w-[12rem]">{user ? `${user.display_name} · ${ROLE_LABEL[user.role]}` : "Choose identity"}</span>
           <ChevronDown aria-hidden />
         </Button>
       </DropdownMenuTrigger>

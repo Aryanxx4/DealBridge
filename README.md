@@ -2,6 +2,8 @@
 
 **Enterprise Product Evaluation & Intelligence Platform**
 
+> **Build status:** this repository contains a working implementation. See [Implementation guide](#implementation-guide) for the current status, setup and run instructions, and `docs/FINAL_REPORT.md` for verified results.
+
 DealBridge helps potential buyers evaluate whether a complex enterprise product fits their needs, while helping sellers understand buyer requirements and resolve technical questions. It combines a requirement assessment workflow with a source-grounded product knowledge assistant and a human-approved, continuously improving knowledge base.
 
 > **One-line summary:** DealBridge turns buyer requirements and product questions into evidence-backed assessments, clear next steps and reusable verified knowledge.
@@ -1174,3 +1176,119 @@ The knowledge architecture intentionally separates:
 - Transactional application data, stored in PostgreSQL.
 
 Together, these components turn DealBridge into a platform for structured product evaluation, buyer-seller collaboration and continuously improving product knowledge.
+
+---
+
+# Implementation guide
+
+The sections below describe the implementation in this repository (hackCbs9). They were written after running every listed command in this repository.
+
+## Current status
+
+**Works, verified by automated tests against real PostgreSQL, Qdrant and the local embedding model, with a scripted LLM:**
+- Official knowledge: an OKF v0.2 bundle of 44 curated IOMETE concepts, every excerpt verified verbatim against the live documentation page, and idempotent ingestion (89 chunks).
+- Grounded product chat: classification, retrieval over both collections with the mandatory approved and ACTIVE filter, verbatim quote verification, a faithfulness check, labelled citations, tickets with dedupe, and My questions.
+- Dynamic knowledge loop: the admin ticket workflow, approval-gated publishing into `resolved_query_knowledge`, supersede and revoke, and a differently worded repeat question answered as "Expert-verified answer".
+- Requirement intake by PDF (scanned detection), intake chat with apply-only-on-click proposals, and the guided form. RequirementService with revisions, STALE handling and confirmation rules.
+- The assessment engine with judge, guardrails G1–G8 and immutable versions, plus comparison, the PDF report, explicit version-bound sharing, the seller workspace, seller responses and follow-ups.
+- `make test`: 112 backend tests pass, plus frontend typecheck, lint and build. `make check-secrets` passes.
+
+**Not yet verified with the real language model.** The Qwen API key has not been provided yet. Without it every LLM endpoint returns 503 `LLM_NOT_CONFIGURED` and the UI says so. The real-LLM demo run (`demo/DEMO_SCRIPT.md`) and `make test-llm` are pending. See `docs/FINAL_REPORT.md`, "Needs the user".
+
+## Architecture
+
+```text
+ Browser (React 18 + Vite, demo identity header)            knowledge/official/iomete  (OKF v0.2 bundle, Git)
+        │  /api (Vite proxy)                                          │ scripts/ingest_okf.py (hash-based, idempotent)
+        ▼                                                             ▼
+ FastAPI (sync) ── RequirementService · RAG pipeline · judge + guardrails · publish ──► Qdrant
+    │      │        jobs (BackgroundTasks + jobs table)                                 ├─ official_product_knowledge
+    │      └──► Qwen (DashScope OpenAI-compatible API, forced tool calls)              └─ resolved_query_knowledge
+    │      └──► fastembed BAAI/bge-small-en-v1.5 (local, 384 d)      (filter: approval_status=approved AND validity_status=ACTIVE)
+    ▼
+ PostgreSQL 16: users, assessments, requirements, revisions, versions, evidence, tickets, knowledge_records,
+                shares, follow-ups, jobs, audit_events, knowledge_state (epoch), okf_files, ingestion_runs
+```
+
+## Prerequisites
+- Python 3.12 (`python3.12` on PATH; tested with Homebrew Python 3.12.15)
+- Node.js 20+ and npm (tested with Node 22.16, npm 10.9)
+- Docker with Compose v2 (tested with Docker 29 on Colima, Compose 5.6)
+- About 200 MB for the embedding model, downloaded on first use into `.cache/fastembed`
+
+## Setup
+```bash
+cp .env.example .env          # then set LLM_API_KEY to your Qwen (DashScope) key; never commit .env
+make up                       # postgres (host port 5433) + qdrant (6333/6334), waits until healthy
+make backend-install          # creates backend/.venv and installs pinned requirements
+make frontend-install         # npm ci
+make migrate                  # alembic upgrade head
+make init-vector              # creates both Qdrant collections and payload indexes (idempotent)
+make ingest                   # ingests the OKF bundle (second run upserts 0 points)
+make seed                     # demo identities (idempotent)
+```
+
+## Run
+```bash
+make dev-backend              # http://localhost:8000  (OpenAPI docs: /docs, health: /api/health)
+make dev-frontend             # http://localhost:5173
+```
+Pick an identity with the dropdown in the top bar (Priya, buyer · Daniel, buyer · Meera and Arjun, seller · Sam, admin).
+
+## Environment variables
+| Variable | Required | Default | Purpose |
+|---|---|---|---|
+| `DATABASE_URL` | yes | `postgresql+psycopg://dealbridge:dealbridge@localhost:5433/dealbridge` | PostgreSQL (psycopg 3) |
+| `QDRANT_URL` | yes | `http://localhost:6333` | Qdrant REST |
+| `APP_SECRET_KEY` | yes | `change-me` | Required setting; never logged |
+| `LLM_API_KEY` | for LLM features | empty | Qwen / DashScope key. Empty means LLM endpoints return 503 `LLM_NOT_CONFIGURED` |
+| `LLM_PROVIDER` | no | `qwen` | Only `qwen` is accepted |
+| `LLM_BASE_URL` | no | `https://dashscope-intl.aliyuncs.com/compatible-mode/v1` | OpenAI-compatible endpoint |
+| `LLM_MODEL` / `LLM_FAST_MODEL` | no | `qwen3.8-max` / `qwen3.8-flash` | Main and fast models |
+| `LLM_TIMEOUT_SECONDS`, `LLM_FAST_TIMEOUT_SECONDS`, `LLM_MAX_RETRIES` | no | 60 / 20 / 2 | Timeouts and retries |
+| `EMBEDDING_PROVIDER`, `EMBEDDING_MODEL`, `EMBEDDING_DIMENSION`, `FASTEMBED_CACHE_DIR` | no | `fastembed`, `BAAI/bge-small-en-v1.5`, 384, `./.cache/fastembed` | Local embeddings (changing them requires a reindex) |
+| `RETRIEVAL_MIN_SCORE`, `RESOLVED_REUSE_MIN_SCORE` | no | 0.60 / 0.70 | Calibrated thresholds (see below) |
+| `TOP_K_OFFICIAL`, `TOP_K_RESOLVED`, `TICKET_DUP_MIN_SCORE` | no | 6 / 4 / 0.85 | Retrieval and dedupe |
+| `ENABLE_FAITHFULNESS_CHECK`, `ALLOW_SELF_APPROVAL` | no | true / true | Second-stage check; one admin may propose and approve (both recorded) |
+| `UPLOAD_DIR`, `MAX_UPLOAD_MB`, `MAX_PDF_PAGES` | no | `./uploads`, 20, 200 | Upload storage and limits |
+| `OKF_BUNDLE_DIR` | no | `./knowledge/official/iomete` | OKF bundle root |
+| `APP_ENV`, `BACKEND_PORT`, `FRONTEND_ORIGIN`, `LOG_LEVEL` | no | development, 8000, `http://localhost:5173`, INFO | App settings (CORS allows only `FRONTEND_ORIGIN`) |
+| `QDRANT_API_KEY`, `QDRANT_OFFICIAL_COLLECTION`, `QDRANT_RESOLVED_COLLECTION` | no | empty, defaults | Qdrant options |
+
+The frontend has one variable, `VITE_API_BASE_URL` (default `/api`). No secret is ever placed in `frontend/`.
+
+## Knowledge: OKF status and how to add or update knowledge
+The official knowledge is an **Open Knowledge Format v0.2** bundle (spec: GoogleCloudPlatform/open-knowledge-format, `SPEC.md` at commit `ad30107`). See `knowledge/official/OKF_CONFORMANCE.md` for the field mapping and `knowledge/official/README.md` for the update workflow:
+1. Edit or add a concept in `knowledge/official/iomete/<category>/`, from a fetched official page only, and bump `version`.
+2. Run `backend/.venv/bin/python scripts/verify_knowledge_excerpts.py`. It fetches each source page and checks every excerpt verbatim. Add `--approve` to approve the files that pass.
+3. Run `make ingest`. Only changed files are re-embedded. `python scripts/ingest_okf.py --validate-only | --dry-run | --force | --recreate | --rebuild-index`.
+4. After changing the embedding model: `python scripts/reindex_knowledge.py` (official is rebuilt from the bundle, resolved from PostgreSQL).
+
+Known documentation gaps (air-gapped installs, compliance certifications and others) are listed in `docs/KNOWLEDGE_GAPS.md`.
+
+## Retrieval thresholds and how they were calibrated
+`scripts/calibrate_threshold.py` runs 37 answerable and 17 unanswerable questions (`backend/tests/fixtures/retrieval_eval.yaml`) against the indexed bundle. No threshold reaches 90% recall at a 10% or lower false-accept rate. Off-topic questions score at most 0.47, but on-topic yet undocumented questions (MFA, HSM keys, SOC 2) score 0.66–0.71, the same as answerable ones. `RETRIEVAL_MIN_SCORE=0.60` (recall 97%, false-accept 47%) therefore only removes noise. Grounding is enforced by verbatim quote verification, the explicit-certification rule, the faithfulness check and the guardrails. The full table is in `docs/DECISIONS.md`.
+
+## Demo walkthrough
+See [`demo/DEMO_SCRIPT.md`](demo/DEMO_SCRIPT.md). Run `make reset-demo` before a demo. The demo PDFs are regenerated with `backend/.venv/bin/python scripts/make_demo_pdfs.py`.
+
+## Tests
+```bash
+make test            # backend pytest (unit + integration on dealbridge_test DB and test_ Qdrant collections, scripted LLM)
+                     # then frontend typecheck, lint and build
+make check-secrets   # builds the frontend and scans dist/ and tracked files for secrets
+make test-llm        # real-LLM prompt-injection evaluation (skipped when LLM_API_KEY is empty)
+```
+
+## Troubleshooting
+- **Docker not running / `make up` hangs:** start the runtime (`colima start`), then `docker compose ps`. If `docker compose` is unknown, add `"cliPluginsExtraDirs": ["/opt/homebrew/lib/docker/cli-plugins"]` to `~/.docker/config.json`.
+- **Port 5432 already in use:** the container is published on **5433** by default (`POSTGRES_HOST_PORT`) because a local PostgreSQL often owns 5432.
+- **Backend exits with "Run make migrate":** the database revision is behind the code. Run `make migrate`.
+- **`reindex_required` in `/api/health` or on Admin, Knowledge:** the collections were built with a different embedding model or dimension. Run `python scripts/reindex_knowledge.py`.
+- **"Language model not configured" alert or 503 `LLM_NOT_CONFIGURED`:** set `LLM_API_KEY` in `.env` and restart `make dev-backend`.
+- **Embedding model download is slow or fails:** the first start downloads about 130 MB from Hugging Face into `.cache/fastembed`, and `/api/health` shows `embedding_loading: true` until it finishes. Retry when the network is available; the cache is reused.
+
+## Limitations and responsible use
+DealBridge is an evaluation assistant, not an autonomous procurement authority. Its results depend on the completeness of the buyer's requirements, the quality and currency of the documentation, retrieval quality, human validation of uncertain requirements, and the accuracy of expert answers. A retrieved passage may be relevant without satisfying a requirement. Therefore similarity scores are never shown as proof, Unknown stays Unknown, Not supported is used only on explicit evidence, certification claims require explicit evidence, buyer-specific compatibility requires buyer-specific validation, and reports state their assumptions and limitations.
+
+**Not implemented (by design for this MVP):** real authentication (demo identities only), tenant isolation beyond ownership checks, encryption at rest, data retention policies, malware scanning of uploads, and OCR for scanned PDFs. Rate limiting is in-process and not production-grade. Production use requires all of these.

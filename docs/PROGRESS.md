@@ -94,3 +94,15 @@
 - Follow-ups: the full §10.13 state machine, `NOT_SHARED` without a share, and CLOSED threads are read-only.
 - `pytest`: 102 passed. This includes every §15.3 item-9 and item-11 test, plus unshared versions hidden, non-Latin report text, and cross-buyer isolation.
 - UI: results actions (download PDF, share dialog with sees/never-sees lists and a consent checkbox), the buyer "Share and follow-ups" tab (status, revoke, request a follow-up with a share-first path, threads), and the seller workspace (shared list, follow-up queue, read-only assessment with status filter tiles, a detail sheet with the response form and helper text, report download, follow-up threads). No edit controls on the seller side. Typecheck, lint and build pass.
+
+## 2026-11-01 02:30 IST — G7 Polish and verification ✅ (real-LLM items pending the key)
+**Works (verified by command output):**
+- `make backend-install`, `make frontend-install`, `make reset-demo` (refuses without `--yes`; truncates app tables, recreates the resolved collection, keeps 89 official points) all ran.
+- `make test`: **112 passed, 1 deselected** (the real-LLM eval), then typecheck, lint and build pass. `make check-secrets`: passed (60 dist files plus tracked files).
+- QwenClient unit tests with a stubbed OpenAI client cover the forced tool payload (`enable_thinking=false`), the fast or main model choice, the validation retry, the temperature and json_object fallbacks, transient-error retries, and auth error mapping.
+- `tests/eval/test_prompt_injection.py` (marker `llm`) collects and skips without a key.
+- 768 px check: no page-level horizontal scroll; tables scroll inside their cards; the header was tightened.
+- Docs: README implementation guide (status, architecture, setup, run, env table, OKF, calibration, tests, troubleshooting, limitations), docs/API.md (71 routes, generated from the running app's OpenAPI), demo/DEMO_SCRIPT.md (observed vs pending, honestly marked), docs/FINAL_REPORT.md.
+- Demo steps observed without the LLM: the scanned-PDF message (exact), text PDF OK, extraction returning 503 `LLM_NOT_CONFIGURED`, and Daniel getting 404 on FinBank's assessment.
+
+**Missing:** the full demo script with the real LLM, `make test-llm`, G8 (P1) items, and GitHub/Vercel deployment.

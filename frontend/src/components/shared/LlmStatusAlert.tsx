@@ -11,7 +11,7 @@ export function LlmStatusAlert({ feature }: { feature: string }) {
     <Alert variant="warning">
       <KeyRound aria-hidden />
       <AlertTitle>Language model not configured</AlertTitle>
-      <AlertDescription>{feature} needs the LLM. Set LLM_API_KEY in the backend .env and restart the backend. Nothing is answered without it.</AlertDescription>
+      <AlertDescription>{feature} needs the language model. Add the LLM API key to the backend .env file and restart the backend. Nothing is answered without it.</AlertDescription>
     </Alert>
   );
 }

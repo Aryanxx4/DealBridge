@@ -3,7 +3,7 @@ PY      := backend/.venv/bin/python
 PYTEST  := backend/.venv/bin/pytest
 COMPOSE := docker compose
 
-.PHONY: up down backend-install frontend-install migrate init-vector ingest seed dev-backend dev-frontend test test-backend test-frontend reset-demo check-secrets
+.PHONY: up down backend-install frontend-install migrate init-vector ingest seed dev-backend dev-frontend test test-backend test-frontend test-llm reset-demo check-secrets
 
 up:
 	$(COMPOSE) up -d
@@ -46,7 +46,11 @@ dev-frontend:
 test: test-backend test-frontend
 
 test-backend:
-	cd backend && .venv/bin/pytest -q
+	cd backend && .venv/bin/pytest -q -m "not llm"
+
+# Real-LLM evaluations (need LLM_API_KEY in .env; skipped otherwise).
+test-llm:
+	cd backend && .venv/bin/pytest -q -m llm tests/eval
 
 test-frontend:
 	cd frontend && npm run typecheck && npm run lint && npm run build
@@ -55,4 +59,5 @@ reset-demo:
 	$(PY) scripts/reset_demo.py --yes
 
 check-secrets:
+	cd frontend && npm run build >/dev/null
 	$(PY) scripts/check_no_secrets_in_bundle.py

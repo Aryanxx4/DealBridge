@@ -26,7 +26,7 @@ export function HealthIndicator() {
       <TooltipTrigger asChild>
         <button type="button" className="flex items-center gap-2 rounded-md px-2 py-1 text-xs text-muted-foreground hover:bg-slate-100" aria-label={`Service status: ${label}`}>
           <span className={cn("size-2.5 rounded-full", tone)} aria-hidden />
-          <span className="hidden md:inline">{label}</span>
+          <span className="hidden lg:inline">{label}</span>
         </button>
       </TooltipTrigger>
       <TooltipContent>{problems.length ? problems.join(" · ") : label}</TooltipContent>
