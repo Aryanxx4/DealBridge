@@ -472,3 +472,57 @@ export interface VersionRow {
   status_counts: Record<FitStatus, number>;
   requirement_count: number;
 }
+
+export interface SellerOrg {
+  id: string;
+  name: string;
+}
+
+export interface ShareRow {
+  id: string;
+  seller_org_id: string;
+  seller_org: string;
+  version_no: number;
+  shared_at: string;
+  revoked_at: string | null;
+  active: boolean;
+}
+
+export type FollowUpStatus = "REQUESTED" | "IN_PROGRESS" | "RESPONDED" | "CLOSED";
+
+export interface FollowUp {
+  id: string;
+  assessment_id: string;
+  assessment_title: string | null;
+  seller_org: string;
+  seller_org_id: string;
+  requested_by: string;
+  buyer_org: string;
+  subject: string;
+  related_requirement_ids: string[];
+  status: FollowUpStatus;
+  seller_decision: "PENDING" | "ACCEPTED" | "REJECTED";
+  decision_reason: string | null;
+  assigned_owner: string | null;
+  created_at: string;
+  updated_at: string;
+  closed_at: string | null;
+  allowed_actions: string[];
+  messages?: { id: string; author: string; author_org: string; author_role: string; body: string; created_at: string }[];
+}
+
+export interface SellerAssessmentRow {
+  id: string;
+  title: string;
+  buyer_name: string | null;
+  buyer_org: string | null;
+  shared_version: number;
+  shared_at: string;
+  status_counts: Record<FitStatus, number>;
+  open_follow_ups: number;
+}
+
+export interface SellerAssessmentView extends AssessmentResults {
+  shared_versions: number[];
+  assessment: AssessmentResults["assessment"] & { buyer_name: string | null; buyer_org: string | null };
+}

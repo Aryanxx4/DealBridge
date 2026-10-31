@@ -84,3 +84,13 @@
 - Demo scanned PDF shrunk to 136 KB (JPEG pages).
 
 **Pending (needs LLM_API_KEY):** a manual run on the demo requirements to observe real statuses.
+
+## 2026-11-01 01:55 IST — G6 Report, sharing, seller ✅
+**Works (verified by command output):**
+- Migration `0007_g6`: assessment_shares (version-bound, revocable), seller_responses, follow_up_requests and follow_up_messages (append-only).
+- PDF report: ReportLab Platypus, A4, DejaVu Sans (bundled with its licence), every section of §10.10 in order, statuses printed as text plus a colour chip, "page X of Y" footer, the exact disclaimer, the `DealBridge_Assessment_<slug>_v<N>_<YYYYMMDD>.pdf` attachment name, and an audit entry. Buyer tickets are included only in the buyer's copy. A layout render was checked visually.
+- Sharing: explicit consent (400 `CONSENT_REQUIRED`), 409 `NO_ANALYSIS`, version-bound shares, revoke (immediate loss of access including follow-ups), and a shares list.
+- Seller view: only versions shared with the seller's organisation. It contains no uploaded files, chats, tickets or raw form. Seller responses are attributed, stored separately, never change requirements or statuses, and appear in buyer results and the report as "Seller statement — not verified by product documentation".
+- Follow-ups: the full §10.13 state machine, `NOT_SHARED` without a share, and CLOSED threads are read-only.
+- `pytest`: 102 passed. This includes every §15.3 item-9 and item-11 test, plus unshared versions hidden, non-Latin report text, and cross-buyer isolation.
+- UI: results actions (download PDF, share dialog with sees/never-sees lists and a consent checkbox), the buyer "Share and follow-ups" tab (status, revoke, request a follow-up with a share-first path, threads), and the seller workspace (shared list, follow-up queue, read-only assessment with status filter tiles, a detail sheet with the response form and helper text, report download, follow-up threads). No edit controls on the seller side. Typecheck, lint and build pass.
