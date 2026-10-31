@@ -4,11 +4,10 @@ One line per decision: **decision**. Reason.
 
 ## Owner overrides (take precedence over the build prompt)
 - **Repository root is `hackCbs9/`.** Requested by the project owner.
-- **LLM provider is Qwen (Alibaba Cloud Model Studio / DashScope), not Anthropic.** Owner instruction; replaces build-prompt §3/§13 "Anthropic only". Accessed through the official `openai` Python SDK against DashScope's OpenAI-compatible endpoint (`LLM_BASE_URL`, default `https://dashscope-intl.aliyuncs.com/compatible-mode/v1`). No other provider, no LangChain/LlamaIndex.
-- **`LLM_MODEL=qwen3.8-max`, `LLM_FAST_MODEL=qwen3.8-flash`.** Newest Max and Flash model codes listed on https://www.alibabacloud.com/help/en/model-studio/models (fetched 2026-10-31). Both are configurable.
-- **Structured output via a forced function call (`tool_choice` naming the function) with `enable_thinking=false` passed in `extra_body`.** Third-party Qwen docs state that forced tool choice is unavailable in thinking mode. If the API rejects forcing, fall back to `response_format={"type":"json_object"}` with the JSON schema in the prompt; both paths validate with Pydantic.
-- **`LLM_PROVIDER` accepts only `qwen`.** Single-provider rule kept, with the provider swapped.
-- **No Claude/AI co-author trailers in commits.** Owner instruction; commits use the owner's git identity.
+- **LLM provider is OpenRouter, not Anthropic.** Owner instruction; accessed through the official `openai` Python SDK against OpenRouter's OpenAI-compatible endpoint (`LLM_BASE_URL`, default `https://openrouter.ai/api/v1`). No LangChain/LlamaIndex.
+- **`LLM_MODEL=openai/gpt-4.1`, `LLM_FAST_MODEL=openai/gpt-4.1`.** Both configurable; selected by the owner for use through OpenRouter.
+- **Structured output via a forced function call (`tool_choice` naming the function).** If the API rejects forcing, fall back to `response_format={"type":"json_object"}` with the JSON schema in the prompt; both paths validate with Pydantic.
+- **`LLM_PROVIDER` accepts only `openrouter`.** Single-provider rule kept.
 - **Deployment target: GitHub plus Vercel.** Owner instruction. Vercel hosts the static frontend. The backend (FastAPI, PostgreSQL, Qdrant, local embedding model) cannot run on Vercel serverless and needs separate hosting, decided at deploy time.
 
 ## Environment
