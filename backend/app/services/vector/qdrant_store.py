@@ -39,7 +39,7 @@ def retrievable_filter() -> models.Filter:
 
 class QdrantStore:
     def __init__(self, url: str, api_key: str | None, official: str, resolved: str, dimension: int):
-        self.client = QdrantClient(url=url, api_key=api_key or None, timeout=10)
+        self.client = QdrantClient(url=url, api_key=api_key or None, timeout=10, check_compatibility=False)
         self.official = official
         self.resolved = resolved
         self.dimension = dimension

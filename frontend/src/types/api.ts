@@ -98,3 +98,68 @@ export interface KnowledgeStatus {
   running_job_id: string | null;
   files: OkfFileRow[];
 }
+
+export type AnswerType =
+  | "OFFICIAL_VERIFIED"
+  | "EXPERT_VERIFIED"
+  | "MIXED_VERIFIED"
+  | "GENERAL_EXPLANATION"
+  | "PARTIAL"
+  | "UNVERIFIED"
+  | "REDIRECT"
+  | "OUT_OF_SCOPE"
+  | "SMALL_TALK";
+
+export interface Citation {
+  n: number;
+  collection: "OFFICIAL" | "RESOLVED";
+  label: "Official documentation" | "Expert-verified answer";
+  knowledge_id: string;
+  chunk_id: string;
+  title: string;
+  heading_path: string;
+  source_url: string | null;
+  source_document: string | null;
+  excerpt: string;
+  version: number | null;
+  last_verified_at: string | null;
+  approved_at: string | null;
+  relevance_score?: number; // admins only
+}
+
+export interface TicketRef {
+  id: string;
+  display_id: string;
+  status: TicketStatus;
+  linked: boolean;
+}
+
+export type TicketStatus = "OPEN" | "IN_REVIEW" | "ANSWER_PROPOSED" | "APPROVED" | "REJECTED" | "PUBLISHED" | "CLOSED";
+
+export interface ChatMessage {
+  id: string;
+  role: "USER" | "ASSISTANT";
+  content: string;
+  answer_type: AnswerType | null;
+  citations: Citation[];
+  general_explanation_markdown: string | null;
+  unverified_aspects: string[];
+  conflict_note: string | null;
+  action: { type: "OPEN_ASSESSMENT"; assessment_id: string | null } | null;
+  ticket: TicketRef | null;
+  created_at: string;
+}
+
+export interface ChatSession {
+  id: string;
+  title: string;
+  assessment_id: string | null;
+  requirement_id: string | null;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface ChatSessionDetail extends ChatSession {
+  messages: ChatMessage[];
+  privacy_notice: string;
+}

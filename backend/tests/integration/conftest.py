@@ -92,3 +92,63 @@ def mini_bundle(tmp_path):
     dst = tmp_path / "okf_mini"
     shutil.copytree(FIXTURES / "okf_mini", dst)
     return dst
+
+
+# ---- API / LLM fixtures -------------------------------------------------------
+import re as _re  # noqa: E402
+
+from fastapi.testclient import TestClient  # noqa: E402
+
+from app.core.runtime import STATE  # noqa: E402
+from app.services.ingestion.okf_ingest import IngestOptions, ingest_bundle  # noqa: E402
+from app.services.llm.client import get_fake_llm  # noqa: E402
+from app.services.seed import demo_id  # noqa: E402
+
+
+@pytest.fixture()
+def fake_llm():
+    f = get_fake_llm()
+    f.reset()
+    yield f
+    f.reset()
+
+
+@pytest.fixture()
+def client(db, fake_llm, embedder):
+    from app.main import create_app
+
+    STATE.reindex_required = False
+    STATE.reindex_problems = []
+    with TestClient(create_app(skip_startup_checks=True)) as c:
+        yield c
+
+
+def as_user(key: str) -> dict:
+    """Request headers for a seeded demo identity, e.g. as_user('priya')."""
+    return {"X-Demo-User-Id": str(demo_id(f"user:{key}"))}
+
+
+@pytest.fixture()
+def acme_indexed(db, store, embedder, mini_bundle):
+    res = ingest_bundle(db, IngestOptions(triggered_by="test"), bundle=mini_bundle, store=store, embedder=embedder)
+    assert res.chunks_upserted > 0
+    return res
+
+
+CHUNK_RE = _re.compile(r'<retrieved_chunk n="(\d+)"[^>]*>\n(.*?)\n</retrieved_chunk>', _re.S)
+
+
+def chunks_in(messages: list[dict]) -> dict[int, str]:
+    text = "\n".join(m["content"] for m in messages)
+    return {int(n): body for n, body in CHUNK_RE.findall(text)}
+
+
+def first_sentence(text: str, min_len: int = 30) -> str:
+    clean = _re.sub(r"^\s*>\s?", "", text, flags=_re.M)
+    clean = _re.sub(r"^\s*[-*]\s+", "", clean, flags=_re.M)
+    for line in clean.split("\n\n"):
+        for part in _re.split(r"(?<=\.)\s+", " ".join(line.split())):
+            part = part.strip()
+            if len(part) >= min_len and not part.startswith("Source:"):
+                return part.rstrip(".")
+    return " ".join(clean.split())[:80]

@@ -1,0 +1,74 @@
+# Retrieval calibration set (Gate G2). Questions are phrased differently from the documentation wording.
+# `expected` lists acceptable knowledge_ids (any one in the top 6 counts as a hit).
+answerable:
+  - {q: "Can we host the platform inside our own data center?", expected: [iomete.deployment.on-premises, iomete.deployment.options]}
+  - {q: "Does it work in a hybrid setup?", expected: [iomete.deployment.options]}
+  - {q: "Will our data ever leave our network?", expected: [iomete.deployment.options]}
+  - {q: "How many CPUs and how much memory do we need to install it ourselves?", expected: [iomete.deployment.on-premises]}
+  - {q: "Do we need Kubernetes to run it?", expected: [iomete.deployment.kubernetes, iomete.deployment.on-premises]}
+  - {q: "Can it run on AWS, Azure or Google Cloud?", expected: [iomete.deployment.cloud-providers]}
+  - {q: "Can several installations share users and catalogs?", expected: [iomete.deployment.multi-cluster]}
+  - {q: "Which database stores the platform's metadata?", expected: [iomete.deployment.metadata-database, iomete.architecture.storage]}
+  - {q: "Can passwords and keys be kept in HashiCorp Vault?", expected: [iomete.deployment.operations]}
+  - {q: "Are compute and storage scaled separately?", expected: [iomete.architecture.lakehouse, iomete.architecture.storage, iomete.architecture.compute-clusters]}
+  - {q: "Which object stores can hold our data?", expected: [iomete.architecture.storage, iomete.deployment.on-premises]}
+  - {q: "What open table format does it use?", expected: [iomete.architecture.iceberg]}
+  - {q: "Can I query a table as it looked last week?", expected: [iomete.architecture.time-travel, iomete.architecture.iceberg]}
+  - {q: "Can we turn clusters off when nobody uses them to save money?", expected: [iomete.architecture.compute-clusters]}
+  - {q: "How does the platform grow when our workload grows?", expected: [iomete.architecture.scalability]}
+  - {q: "Can our people log in with Azure AD?", expected: [iomete.security.authentication]}
+  - {q: "Can we import users from Active Directory?", expected: [iomete.security.ldap]}
+  - {q: "Can I hide the salary column from some analysts?", expected: [iomete.security.access-policies, iomete.security.data-masking]}
+  - {q: "Can personal data be hidden in query results?", expected: [iomete.security.data-masking, iomete.security.tag-based]}
+  - {q: "Can a regional manager see only rows for their region?", expected: [iomete.security.row-level-filter]}
+  - {q: "Can permissions follow labels like PII or Confidential?", expected: [iomete.security.tag-based]}
+  - {q: "How do I authenticate API calls from a script?", expected: [iomete.security.access-tokens]}
+  - {q: "Is there a SQL editor in the browser?", expected: [iomete.platform.sql-editor]}
+  - {q: "Can data scientists work in notebooks?", expected: [iomete.platform.notebooks]}
+  - {q: "Can I schedule a Spark job with a cron expression?", expected: [iomete.platform.spark-jobs]}
+  - {q: "Can important jobs jump ahead of routine ones?", expected: [iomete.platform.job-orchestrator]}
+  - {q: "Can it process events continuously in real time?", expected: [iomete.platform.streaming]}
+  - {q: "Can analysts search for tables across catalogs?", expected: [iomete.platform.data-catalog]}
+  - {q: "Does it clean up small files on its own?", expected: [iomete.platform.table-maintenance]}
+  - {q: "Can Tableau connect to it?", expected: [iomete.integrations.tableau]}
+  - {q: "How do we hook up Power BI?", expected: [iomete.integrations.power-bi]}
+  - {q: "Can Airflow kick off jobs?", expected: [iomete.integrations.airflow]}
+  - {q: "Does dbt work with it?", expected: [iomete.integrations.dbt]}
+  - {q: "Can I connect DBeaver?", expected: [iomete.integrations.sql-clients]}
+  - {q: "Can one query join MySQL and Snowflake data?", expected: [iomete.integrations.query-federation]}
+  - {q: "How do we copy tables over from PostgreSQL?", expected: [iomete.integrations.jdbc-migration, iomete.integrations.query-federation]}
+  - {q: "Can SQL worksheets be versioned in GitLab?", expected: [iomete.integrations.git, iomete.platform.sql-editor]}
+
+unanswerable:
+  - "Can I run it without internet?"
+  - "Is IOMETE SOC 2 Type II certified?"
+  - "Do you hold ISO 27001 certification?"
+  - "Is the platform HIPAA compliant?"
+  - "Is it FedRAMP authorized?"
+  - "How much does an enterprise license cost?"
+  - "What is the price per CPU core per year?"
+  - "Does it comply with the FinBank Internal Security Standard FBS-114?"
+  - "What's the weather in Delhi tomorrow?"
+  - "Who won the last cricket world cup?"
+  - "How do I bake sourdough bread?"
+  - "Is it certified for PCI DSS level 1?"
+  - "Is multi-factor authentication enforced for every login?"
+  - "What are its TPC-DS benchmark results against Snowflake?"
+  - "How many weeks would migrating 500 Teradata tables take?"
+  - "Is data at rest encrypted with customer-managed keys in an HSM?"
+  - "Does the vendor offer 24/7 phone support in Hindi?"
+
+# Synthetic pairs for the resolved-answer reuse threshold (no product facts; answers are non-capability statements).
+resolved_pairs:
+  - stored: "Is the platform certified against the FinBank internal standard FBS-114?"
+    answer: "This internal FinBank standard is not covered in the available product documentation. A formal mapping exercise with the vendor's security team is required."
+    same: ["Does the product meet FinBank's FBS-114 standard?", "Is FBS-114 compliance confirmed for the platform?", "Has the platform been assessed against FBS-114?"]
+    different: ["Is the platform certified against ISO 27001?", "Does the platform support Kerberos?", "Is the platform certified against FBS-200?"]
+  - stored: "Is there a published support SLA for production incidents?"
+    answer: "Support terms are agreed in the commercial contract and are not part of the product documentation. Ask the sales team for the current support terms."
+    same: ["What is the support SLA for P1 incidents?", "Do you publish response times for production support?", "How fast does support respond to outages?"]
+    different: ["Can we run it on-premises?", "Is there a support portal for bug reports?", "What is the uptime SLA of the managed cloud offering?"]
+  - stored: "Can the vendor provide a reference customer in banking?"
+    answer: "Reference customers are arranged by the sales team on request and are not listed in the product documentation."
+    same: ["Do you have a bank we could talk to as a reference?", "Can we speak with an existing banking customer?", "Is a financial-services reference available?"]
+    different: ["Which BI tools are supported?", "Can we get a reference customer in retail?", "Is there a trial license?"]

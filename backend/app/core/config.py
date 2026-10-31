@@ -58,8 +58,8 @@ class Settings(BaseSettings):
     FASTEMBED_CACHE_DIR: str = "./.cache/fastembed"
 
     # Retrieval and answer thresholds
-    RETRIEVAL_MIN_SCORE: float = 0.50
-    RESOLVED_REUSE_MIN_SCORE: float = 0.80
+    RETRIEVAL_MIN_SCORE: float = 0.60
+    RESOLVED_REUSE_MIN_SCORE: float = 0.70
     TOP_K_OFFICIAL: int = 6
     TOP_K_RESOLVED: int = 4
     TICKET_DUP_MIN_SCORE: float = 0.85

@@ -21,17 +21,9 @@ MAX_JSON_BYTES = 1024 * 1024
 
 
 def _routers():
-    from app.api import health, identity
+    from app.api import health, identity, registry
 
-    routers = [health.router, identity.router]
-    # Feature routers are registered as each gate lands.
-    try:
-        from app.api import registry
-
-        routers.extend(registry.ROUTERS)
-    except ImportError:
-        pass
-    return routers
+    return [health.router, identity.router, *registry.ROUTERS]
 
 
 @asynccontextmanager

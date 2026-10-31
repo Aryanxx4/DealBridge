@@ -26,3 +26,22 @@ One line per decision: **decision**. Reason.
 - **IOMETE docs are fetched from `https://iomete.com/resources/...` (Docusaurus).** Located via robots.txt, then sitemap.xml.
 - **The hackathon starter kit PDF was used only for links, not as a fact source (R8).** Its IOMETE claims are marketing summaries, not documentation pages.
 - **PostgreSQL container is published on host port 5433 (`POSTGRES_HOST_PORT`), not 5432.** A pre-existing PostgreSQL server on the development machine already listens on 5432; DealBridge does not touch it.
+
+## Retrieval calibration (G2, `scripts/calibrate_threshold.py`, 37 answerable / 17 unanswerable questions, official collection, top 6)
+| threshold | recall@6 | false-accept rate |
+|---|---|---|
+| 0.30 | 100% | 100% |
+| 0.35 | 100% | 100% |
+| 0.40 | 100% | 100% |
+| 0.45 | 100% | 88% |
+| 0.50 | 100% | 82% |
+| 0.55 | 100% | 71% |
+| 0.60 | 97% | 47% |
+| 0.65 | 70% | 24% |
+| 0.70 | 49% | 6% |
+| 0.75 | 30% | 0% |
+| 0.80 | 11% | 0% |
+
+- **`RETRIEVAL_MIN_SCORE=0.60`.** No threshold reaches recall ≥ 90% with false-accept ≤ 10%, so this is the best trade-off, stated explicitly: recall 97%, false-accept 47%. Off-topic questions top out at 0.40–0.47 and are removed. On-topic but undocumented questions (MFA 0.71, HSM keys 0.69, SOC 2 0.67, HIPAA 0.66) cannot be separated by similarity at all. They are handled downstream by verbatim quote verification, the explicit-certification rule and the faithfulness check, which is why similarity is never treated as evidence (R3).
+- **`RESOLVED_REUSE_MIN_SCORE=0.70`.** On 3 synthetic stored Q&A records with 9 paraphrases and 9 non-matching questions, paraphrase scores ranged 0.633–0.80+ and non-matching scores reached up to 0.783 (the distributions overlap). At 0.70, 8/9 paraphrases and 3/9 non-matching questions are flagged as reuse candidates. 0.80 would reuse only 1/9 paraphrases. A flagged answer is only *preferred*: the answer prompt (rule c) must still reject it on any version, environment or customer-condition mismatch, and every claim must quote it verbatim.
+- **`TICKET_DUP_MIN_SCORE=0.85` kept.** Measured document-to-document similarities: close paraphrases 0.96–0.97, "Kubernetes 1.30 vs 1.24" 0.953, "encrypted at rest vs in transit" 0.872, "SOC 2 vs ISO 27001" 0.757. Qualifier differences can exceed the threshold, so the LLM same-intent and differing-qualifier check is mandatory before linking.

@@ -32,3 +32,15 @@
 
 **Missing / notes:**
 - Gaps are recorded in docs/KNOWLEDGE_GAPS.md: no fetched page covers air-gapped installs or names any compliance certification.
+
+## 2026-11-01 00:05 IST — G2 Grounded chatbot ✅ (real-LLM checks pending the key)
+**Works (verified by command output):**
+- Qwen client over the OpenAI-compatible API. Structured output uses a forced function call (`enable_thinking=false`), Pydantic validation, one validation retry, tenacity retries, then 503 `LLM_UNAVAILABLE`. A FakeLLM is used for tests only.
+- Pipeline: classify → route (small talk, out of scope, requirement redirect) → retrieve both collections with the mandatory filter and threshold → generate → deterministic verbatim quote verification (retry once with feedback, then discard) → explicit-certification rule → faithfulness check → decide → persist with retrieval trace.
+- Tickets: redaction, document-embedding duplicate check, LLM same-intent check, link (occurrence count +1, priority HIGH at 3) or create, and the context excerpt.
+- `pytest`: 45 passed. This includes the RAG tests (answerable with verified citations, fabricated quote discarded, unanswerable creates a ticket, certification needs explicit evidence, general labelled general, infrastructure failure creates no ticket for both the LLM and Qdrant, dedupe links, dedupe respects qualifiers, partial raises a ticket only on click, unfaithful becomes unverified, small talk and redirect), `test_buyer_cannot_use_other_buyers_chat_session`, and `test_every_suggested_question_gets_a_cited_answer` against the real 44-file bundle.
+- Calibration: `scripts/calibrate_threshold.py` table recorded in DECISIONS.md. RETRIEVAL_MIN_SCORE=0.60 and RESOLVED_REUSE_MIN_SCORE=0.70 are set in .env.example and config.
+- Without a key: `POST /api/chat/sessions/{id}/messages` returns 503 `LLM_NOT_CONFIGURED`, and the user message is still saved (curl output). The chat UI shows a warning alert.
+- Chat UI: sessions, suggested questions, cited answers with [n] buttons, sources accordion, partial/unverified/ticket cards and the privacy footer. Typecheck, lint and build pass, and the empty state was checked in a headless Chrome screenshot.
+
+**Pending (needs LLM_API_KEY):** the manual G2 check that a real question returns cited, quote-verified evidence and that an unanswerable question returns the unverified message plus a ticket.
