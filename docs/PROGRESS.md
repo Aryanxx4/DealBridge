@@ -106,3 +106,8 @@
 - Demo steps observed without the LLM: the scanned-PDF message (exact), text PDF OK, extraction returning 503 `LLM_NOT_CONFIGURED`, and Daniel getting 404 on FinBank's assessment.
 
 **Missing:** the full demo script with the real LLM, `make test-llm`, G8 (P1) items, and GitHub/Vercel deployment.
+
+## 2026-11-01 03:05 IST — Clean clone and G8 (P1) ✅
+- **Clean clone:** `git clone`, then the README setup commands, then `make test` (111 passed, 1 skipped as expected on a fresh clone), then `make check-secrets` (passed). EXIT=0.
+- **G8 built and tested:** seller documents (upload, attach to response or follow-up, download only by the uploading org or the owning buyer, never indexed), follow-up owner assignment, Excel export (formula-injection safe), the version-compare "changed only" toggle, and the admin ticket category filter. 6 new integration tests pass.
+- `make test`: **118 passed, 1 deselected**, then typecheck, lint and build pass. `make check-secrets` passes. docs/API.md regenerated (78 routes) by `scripts/generate_api_md.py`.

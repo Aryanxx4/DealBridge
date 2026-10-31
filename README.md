@@ -1191,7 +1191,8 @@ The sections below describe the implementation in this repository (hackCbs9). Th
 - Dynamic knowledge loop: the admin ticket workflow, approval-gated publishing into `resolved_query_knowledge`, supersede and revoke, and a differently worded repeat question answered as "Expert-verified answer".
 - Requirement intake by PDF (scanned detection), intake chat with apply-only-on-click proposals, and the guided form. RequirementService with revisions, STALE handling and confirmation rules.
 - The assessment engine with judge, guardrails G1–G8 and immutable versions, plus comparison, the PDF report, explicit version-bound sharing, the seller workspace, seller responses and follow-ups.
-- `make test`: 112 backend tests pass, plus frontend typecheck, lint and build. `make check-secrets` passes.
+- P1 extras: Excel export, seller document uploads (labelled seller-provided, never indexed), internal follow-up owners, a changed-only version comparison and dashboard filters.
+- `make test`: 118 backend tests pass, plus frontend typecheck, lint and build. `make check-secrets` passes. A clean clone was verified: `git clone`, then the setup commands below, then `make test` and `make check-secrets` all succeeded.
 
 **Not yet verified with the real language model.** The Qwen API key has not been provided yet. Without it every LLM endpoint returns 503 `LLM_NOT_CONFIGURED` and the UI says so. The real-LLM demo run (`demo/DEMO_SCRIPT.md`) and `make test-llm` are pending. See `docs/FINAL_REPORT.md`, "Needs the user".
 

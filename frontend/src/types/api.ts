@@ -406,6 +406,13 @@ export interface SellerResponse {
   body: string;
   created_at: string;
   version_no: number;
+  attachments?: Attachment[];
+}
+
+export interface Attachment {
+  id: string;
+  filename: string;
+  label: string;
 }
 
 export interface RequirementResult {
@@ -508,7 +515,7 @@ export interface FollowUp {
   updated_at: string;
   closed_at: string | null;
   allowed_actions: string[];
-  messages?: { id: string; author: string; author_org: string; author_role: string; body: string; created_at: string }[];
+  messages?: { id: string; author: string; author_org: string; author_role: string; body: string; created_at: string; attachments?: Attachment[] }[];
 }
 
 export interface SellerAssessmentRow {

@@ -26,6 +26,7 @@ export function VersionsTab({ assessment }: { assessment: Assessment }) {
   const versions = useQuery({ queryKey: ["versions", userKey, assessment.id], queryFn: () => analysisApi.versions(assessment.id), enabled: assessment.latest_version_no > 0 });
   const [from, setFrom] = useState<string>("");
   const [to, setTo] = useState<string>("");
+  const [changedOnly, setChangedOnly] = useState(true);
   const ready = from && to && from !== to;
   const cmp = useQuery({ queryKey: ["compare", userKey, assessment.id, from, to], queryFn: () => analysisApi.compare(assessment.id, Number(from), Number(to)), enabled: !!ready });
   if (assessment.latest_version_no === 0) return <EmptyState title="No versions yet" description="Each assessment run creates a new version; earlier versions stay unchanged." />;
@@ -76,6 +77,12 @@ export function VersionsTab({ assessment }: { assessment: Assessment }) {
               )}
             </div>
           )}
+          {cmp.data && (
+            <label className="flex items-center gap-2 text-sm">
+              <input type="checkbox" checked={changedOnly} onChange={(e) => setChangedOnly(e.target.checked)} />
+              Show changed requirements only ({cmp.data.changes.filter((c) => c.change !== "UNCHANGED").length} of {cmp.data.changes.length})
+            </label>
+          )}
           {cmp.error && <ErrorState error={cmp.error} onRetry={() => cmp.refetch()} />}
           {cmp.data && (
             <Table>
@@ -89,7 +96,7 @@ export function VersionsTab({ assessment }: { assessment: Assessment }) {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {cmp.data.changes.map((c) => (
+                {cmp.data.changes.filter((c) => !changedOnly || c.change !== "UNCHANGED").map((c) => (
                   <TableRow key={c.requirement_id} className={cn(c.change !== "UNCHANGED" && "bg-amber-50/30")}>
                     <TableCell className="font-mono text-xs">{c.display_id}</TableCell>
                     <TableCell><span className={cn("rounded-md border px-2 py-0.5 text-xs font-medium", CHANGE_LABEL[c.change].cls)}>{CHANGE_LABEL[c.change].label}</span></TableCell>

@@ -13,7 +13,13 @@ export interface AnswerBody {
 export const adminApi = {
   dashboard: () => api.get<Dashboard>("/admin/dashboard"),
   audit: (limit = 15) => api.get<AuditRow[]>(`/admin/audit?limit=${limit}`),
-  tickets: (status?: string) => api.get<TicketSummary[]>(`/admin/tickets${status ? `?status=${status}` : ""}`),
+  tickets: (status?: string, category?: string) => {
+    const q = new URLSearchParams();
+    if (status) q.set("status", status);
+    if (category) q.set("category", category);
+    const qs = q.toString();
+    return api.get<TicketSummary[]>(`/admin/tickets${qs ? `?${qs}` : ""}`);
+  },
   ticket: (id: string) => api.get<TicketDetail>(`/admin/tickets/${id}`),
   action: (id: string, action: string, body?: Record<string, unknown>) => api.post<TicketDetail>(`/admin/tickets/${id}/${action}`, body),
   answer: (id: string, body: AnswerBody) => api.post<TicketDetail>(`/admin/tickets/${id}/answer`, body as unknown as Record<string, unknown>),

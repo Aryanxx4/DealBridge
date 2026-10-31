@@ -69,14 +69,22 @@ Legend: ✅ verified by the named test or observation · ⏳ implemented and tes
 3. Seller flow: ✅ (tests).
 4. Chatbot answer, ticket, approval and expert-verified repeat: ✅ (`test_dynamic_knowledge_loop_end_to_end`, real Qdrant and embeddings, scripted LLM). Live LLM run pending.
 5. Rejected, unapproved, revoked and superseded answers are never retrievable: ✅.
-6. `make test` and `make check-secrets` pass: ✅ in this working copy (clean-clone run: see "How to run").
+6. `make test` and `make check-secrets` pass: ✅. **Clean clone verified on 2026-11-01:** `git clone` into a fresh directory, `cp .env.example .env`, `make up`, `make backend-install`, `make frontend-install`, `make migrate`, `make init-vector`, `make ingest` (0 upserts, idempotent), `make seed`, `make test` (111 passed, 1 skipped: the bundle-secrets test skips because `dist/` is built after the backend tests on a fresh clone), then `make check-secrets` (passed). Exit code 0. The only shortcut was reusing the downloaded embedding model via `FASTEMBED_CACHE_DIR`.
 7. Full DEMO_SCRIPT run: **not done.** Steps 1, 9 and 13 were observed. The others need the LLM key (marked in the script).
 8. No unverifiable IOMETE claims (R8), and no unrun commands in docs (R10): ✅. Every knowledge excerpt was verified against the live page by `scripts/verify_knowledge_excerpts.py`.
 
 ## What is incomplete
 - No real-LLM run yet. Pending: live chat answers, PDF extraction of the demo PDF (at least 7 requirements with one clarification), real judge statuses on the FinBank requirements, the full demo script, and `make test-llm` (prompt-injection eval).
-- P1 items (G8: seller document upload, internal owner assignment, Excel export, richer comparison UI, dashboard filters) have not been built. `PATCH /api/follow-ups/{id}/owner`, `POST /api/seller/documents` and `GET /api/documents/{id}/download` do not exist.
 - Deployment to GitHub and Vercel: not done yet (see "Needs the user").
+
+## P1 (G8) items built
+| Item | Evidence |
+|---|---|
+| Seller document upload (PDF, .md, .txt), attach to response or follow-up, labelled "Seller-provided document (not official knowledge)", never indexed | `test_seller_documents_are_private_and_never_indexed`, `test_seller_document_attached_to_follow_up`, `test_seller_document_type_validation` |
+| Internal owner assignment for follow-ups | `test_follow_up_owner_assignment` |
+| Excel export (Requirements, Evidence and About sheets; formula-injection safe) | `test_excel_export_has_requirements_and_evidence_sheets`, `test_excel_neutralises_formula_injection` |
+| Richer version comparison UI ("show changed only" toggle with counts) | frontend typecheck, lint and build |
+| Dashboard filters (ticket category plus status) | `GET /api/admin/tickets?category=` and frontend build |
 
 ## How to run
 These commands were verified in this repository:
@@ -106,7 +114,7 @@ The specification was found: **Open Knowledge Format v0.2** (GoogleCloudPlatform
 `RETRIEVAL_MIN_SCORE=0.60` (recall@6 97%, false-accept 47%; no threshold met both targets, so this is the best trade-off). `RESOLVED_REUSE_MIN_SCORE=0.70` (8/9 paraphrases flagged as reuse candidates). `TICKET_DUP_MIN_SCORE=0.85` kept, and the LLM same-intent check is mandatory. Full tables: `docs/DECISIONS.md`.
 
 ## Test results and coverage
-`make test`: see the final line of `docs/PROGRESS.md` for the latest count (all passing, 1 real-LLM test deselected). Coverage of `app/services` from `pytest --cov=app`: 88% before the LLM-client unit tests were added. Highlights: guardrails 100%, analyze 100%, publish 99%, chunker 99%, judge 98%, retrieval/search 98%, rag/pipeline 93%, pdf_report 94%, okf_ingest 86%. `ingestion/html_text.py` is curation tooling exercised by `scripts/verify_knowledge_excerpts.py`, not by pytest.
+`make test`: **118 passed, 1 deselected** (the real-LLM eval), then frontend typecheck, lint and build pass. Coverage of `app/services` from `pytest --cov=app`: 88% before the LLM-client unit tests were added. Highlights: guardrails 100%, analyze 100%, publish 99%, chunker 99%, judge 98%, retrieval/search 98%, rag/pipeline 93%, pdf_report 94%, okf_ingest 86%. `ingestion/html_text.py` is curation tooling exercised by `scripts/verify_knowledge_excerpts.py`, not by pytest.
 
 ## Needs the user
 1. **Qwen API key.** Put it in `.env` as `LLM_API_KEY=...` and restart `make dev-backend`. Do not paste it into chat. Defaults are `LLM_BASE_URL=https://dashscope-intl.aliyuncs.com/compatible-mode/v1`, `LLM_MODEL=qwen3.8-max` and `LLM_FAST_MODEL=qwen3.8-flash`. Change them if your account uses a different region or models. Then run: the demo script (`demo/DEMO_SCRIPT.md`, recording the observed statuses), `make test-llm`, and the G2, G4 and G5 manual checks listed in `docs/PROGRESS.md`.

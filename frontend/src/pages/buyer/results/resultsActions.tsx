@@ -1,4 +1,4 @@
-import { Download } from "lucide-react";
+import { Download, FileSpreadsheet } from "lucide-react";
 import { useState } from "react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
@@ -28,9 +28,17 @@ function DownloadReport({ assessment, versionNo }: { assessment: Assessment; ver
   );
 }
 
+function DownloadExcel({ assessment, versionNo }: { assessment: Assessment; versionNo: number }) {
+  return (
+    <Button variant="outline" onClick={() => sharingApi.excel(assessment.id, versionNo).catch((e: Error) => toast.error(e.message))}>
+      <FileSpreadsheet aria-hidden /> Excel
+    </Button>
+  );
+}
+
 function Share({ assessment, versionNo }: { assessment: Assessment; versionNo: number }) {
   return <ShareDialog assessment={assessment} versionNo={versionNo} />;
 }
 
 /** Page-level actions on the results tab. */
-export const ResultsActions = [DownloadReport, Share];
+export const ResultsActions = [DownloadReport, DownloadExcel, Share];

@@ -34,8 +34,20 @@ def responses_for_version(db: Session, a: Assessment, v: AssessmentVersion) -> d
                 "created_at": r.created_at,
                 "version_no": vno,
                 "label": "Seller statement — not verified by product documentation",
+                "attachments": _attachments(db, r.attachment_document_ids or []),
             }
         )
+    return out
+
+
+def _attachments(db: Session, ids: list[str]) -> list[dict]:
+    from app.models.assessment import UploadedDocument
+
+    out = []
+    for i in ids:
+        d = db.get(UploadedDocument, i)
+        if d is not None:
+            out.append({"id": str(d.id), "filename": d.original_filename, "label": "Seller-provided document (not official knowledge)"})
     return out
 
 

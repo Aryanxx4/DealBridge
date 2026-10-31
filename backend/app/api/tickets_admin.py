@@ -103,10 +103,19 @@ def ticket_detail(db: Session, t: Ticket) -> dict:
 
 
 @router.get("")
-def list_tickets(status: str | None = None, limit: int = 50, offset: int = 0, _: User = Depends(admin_only), db: Session = Depends(get_db)):
+def list_tickets(
+    status: str | None = None,
+    category: str | None = None,
+    limit: int = 50,
+    offset: int = 0,
+    _: User = Depends(admin_only),
+    db: Session = Depends(get_db),
+):
     q = select(Ticket)
     if status:
         q = q.where(Ticket.status.in_(status.split(",")))
+    if category:
+        q = q.where(Ticket.category == category)
     q = q.order_by(Ticket.occurrence_count.desc(), Ticket.created_at.asc()).limit(max(1, min(limit, 200))).offset(offset)
     return [ticket_summary(db, t) for t in db.scalars(q)]
 

@@ -1,6 +1,6 @@
 """Feature routers, registered as each gate lands."""
 
-from app.api import admin_dashboard, analysis, assessments, chat, jobs, knowledge_admin, sharing, tickets_admin
+from app.api import admin_dashboard, analysis, assessments, chat, jobs, knowledge_admin, p1, sharing, tickets_admin
 
 ROUTERS = [
     jobs.router,
@@ -11,4 +11,5 @@ ROUTERS = [
     assessments.router,
     analysis.router,
     sharing.router,
+    p1.router,
 ]

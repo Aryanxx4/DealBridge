@@ -1,6 +1,7 @@
 import { AlertTriangle, MessageCircleQuestion, Sparkles, Wand2 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { PriorityBadge } from "@/components/shared/Badges";
+import { AttachmentLinks } from "@/components/shared/AttachmentLinks";
 import { EvidenceCard } from "@/components/shared/EvidenceCard";
 import { SourceChip } from "@/components/shared/SourceChip";
 import { StatusBadge } from "@/components/shared/StatusBadge";
@@ -93,6 +94,7 @@ export function RequirementDetailSheet({ item, assessmentId, onClose, sellerSlot
                     <span className="text-xs text-muted-foreground">Seller response (attributed, not verified by documentation) · {s.seller_name}, {s.seller_org} · {formatDateTime(s.created_at)}</span>
                   </div>
                   <p><strong>{ASSERTION_LABELS[s.assertion]}:</strong> {s.body}</p>
+                  <AttachmentLinks items={s.attachments} />
                 </div>
               ))}
               {sellerSlot}

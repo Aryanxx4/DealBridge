@@ -154,6 +154,8 @@ def out(db: Session, f: FollowUpRequest, user: User, with_messages: bool = False
         "allowed_actions": _allowed(f, user),
     }
     if with_messages:
+        from app.services.sharing.seller_service import _attachments
+
         msgs = db.scalars(select(FollowUpMessage).where(FollowUpMessage.follow_up_id == f.id).order_by(FollowUpMessage.created_at)).all()
         d["messages"] = [
             {
@@ -163,6 +165,7 @@ def out(db: Session, f: FollowUpRequest, user: User, with_messages: bool = False
                 "author_role": m.author_role,
                 "body": m.body,
                 "created_at": m.created_at,
+                "attachments": _attachments(db, m.attachment_document_ids or []),
             }
             for m in msgs
         ]

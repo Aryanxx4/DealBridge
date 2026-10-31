@@ -34,9 +34,10 @@ function Dashboard() {
   const userKey = useUserKey();
   const navigate = useNavigate();
   const [filter, setFilter] = useState("active");
+  const [category, setCategory] = useState("all");
   const status = FILTERS.find((f) => f.value === filter)?.status ?? "";
   const dash = useQuery({ queryKey: ["admin-dashboard", userKey], queryFn: adminApi.dashboard });
-  const tickets = useQuery({ queryKey: ["admin-tickets", userKey, status], queryFn: () => adminApi.tickets(status || undefined) });
+  const tickets = useQuery({ queryKey: ["admin-tickets", userKey, status, category], queryFn: () => adminApi.tickets(status || undefined, category === "all" ? undefined : category) });
   const audit = useQuery({ queryKey: ["admin-audit", userKey], queryFn: () => adminApi.audit(15) });
 
   return (
@@ -60,6 +61,18 @@ function Dashboard() {
       <Card>
         <CardHeader className="flex-row items-center justify-between gap-3 space-y-0">
           <CardTitle className="text-base">Ticket queue</CardTitle>
+          <div className="flex flex-wrap gap-2">
+          <Select value={category} onValueChange={setCategory}>
+            <SelectTrigger className="w-44" aria-label="Filter tickets by category">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">All categories</SelectItem>
+              {["deployment", "architecture", "security", "platform", "integrations", "concepts", "OTHER"].map((c) => (
+                <SelectItem key={c} value={c}>{c}</SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
           <Select value={filter} onValueChange={setFilter}>
             <SelectTrigger className="w-48" aria-label="Filter tickets by status">
               <SelectValue />
@@ -72,6 +85,7 @@ function Dashboard() {
               ))}
             </SelectContent>
           </Select>
+          </div>
         </CardHeader>
         <CardContent className="p-0">
           {tickets.isLoading && <div className="p-4"><LoadingRows /></div>}

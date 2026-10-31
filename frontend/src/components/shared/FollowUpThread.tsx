@@ -1,6 +1,7 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
 import { toast } from "sonner";
+import { AttachmentLinks } from "@/components/shared/AttachmentLinks";
 import { ConfirmDialog } from "@/components/shared/ConfirmDialog";
 import { ErrorState, LoadingRows } from "@/components/shared/States";
 import { Button } from "@/components/ui/button";
@@ -45,12 +46,15 @@ export function FollowUpThread({ id }: { id: string }) {
         <FollowUpStatusBadge status={f.status} />
         <span className="text-xs text-muted-foreground">{f.buyer_org} ↔ {f.seller_org} · opened {formatDateTime(f.created_at)}</span>
       </div>
+      {isSeller && f.status !== "CLOSED" && <SellerTools f={f} onDone={done} />}
+      {!isSeller && f.assigned_owner && <p className="text-xs text-muted-foreground">Seller owner: {f.assigned_owner}</p>}
       {f.decision_reason && <p className="rounded-md bg-slate-50 p-2 text-sm">Seller decision: {f.seller_decision.toLowerCase()} — {f.decision_reason}</p>}
       <ol className="space-y-2" aria-live="polite">
         {f.messages?.map((m) => (
           <li key={m.id} className={cn("max-w-[85%] rounded-lg border p-3 text-sm", m.author_role === "SELLER" ? "border-teal-200 bg-teal-50/60" : "ml-auto bg-slate-50")}>
             <p className="text-xs text-muted-foreground">{m.author} · {m.author_org} · {formatDateTime(m.created_at)}</p>
             <p className="mt-1 whitespace-pre-wrap">{m.body}</p>
+            <AttachmentLinks items={m.attachments} />
           </li>
         ))}
         {!f.messages?.length && <p className="text-sm text-muted-foreground">No messages yet.</p>}
@@ -70,6 +74,51 @@ export function FollowUpThread({ id }: { id: string }) {
           </div>
         </div>
       )}
+    </div>
+  );
+}
+
+function SellerTools({ f, onDone }: { f: FollowUp; onDone: (f: FollowUp) => void }) {
+  const userKey = useUserKey();
+  const team = useQuery({ queryKey: ["seller-team", userKey], queryFn: sharingApi.team });
+  const [busy, setBusy] = useState(false);
+  const owner = team.data?.find((u) => u.display_name === f.assigned_owner)?.id ?? "none";
+  return (
+    <div className="flex flex-wrap items-center gap-2 rounded-md border bg-slate-50 p-2 text-sm">
+      <span className="text-xs text-muted-foreground">Internal owner</span>
+      <select
+        aria-label="Internal owner"
+        className="h-8 rounded-md border bg-card px-2 text-sm"
+        value={owner}
+        onChange={(e) => sharingApi.assignOwner(f.id, e.target.value === "none" ? null : e.target.value).then(onDone).catch((err: Error) => toast.error(err.message))}
+      >
+        <option value="none">Unassigned</option>
+        {team.data?.map((u) => <option key={u.id} value={u.id}>{u.display_name}</option>)}
+      </select>
+      <label className="ml-auto inline-flex cursor-pointer items-center gap-1 text-xs font-medium text-primary">
+        {busy ? "Uploading…" : "Attach a document (PDF, .md, .txt)"}
+        <input
+          type="file"
+          accept=".pdf,.md,.txt"
+          className="sr-only"
+          disabled={busy}
+          onChange={async (e) => {
+            const file = e.target.files?.[0];
+            e.target.value = "";
+            if (!file) return;
+            setBusy(true);
+            try {
+              const doc = await sharingApi.uploadSellerDocument(file);
+              onDone(await sharingApi.attachToFollowUp(f.id, [doc.id]));
+              toast.success("Document attached (seller-provided, not official knowledge)");
+            } catch (err) {
+              toast.error((err as Error).message);
+            } finally {
+              setBusy(false);
+            }
+          }}
+        />
+      </label>
     </div>
   );
 }

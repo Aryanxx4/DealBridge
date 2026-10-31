@@ -55,6 +55,7 @@ function Inner() {
             <SelectContent>{d.shared_versions.map((n) => <SelectItem key={n} value={String(n)}>Version {n}</SelectItem>)}</SelectContent>
           </Select>
           <Button variant="outline" onClick={() => sharingApi.report(id, d.version.version_no).catch((e: Error) => toast.error(e.message))}><Download aria-hidden /> Download report</Button>
+          <Button variant="outline" onClick={() => sharingApi.excel(id, d.version.version_no).catch((e: Error) => toast.error(e.message))}>Excel</Button>
         </div>
       </div>
       <Card>
@@ -116,9 +117,17 @@ function ResponseForm({ requirementId, versionNo, assessmentId }: { requirementI
   const qc = useQueryClient();
   const [body, setBody] = useState("");
   const [assertion, setAssertion] = useState("NONE");
+  const [file, setFile] = useState<File | null>(null);
   const m = useMutation({
-    mutationFn: () => sharingApi.sellerResponse(requirementId, { version_no: versionNo, body: body.trim(), assertion }),
-    onSuccess: () => { toast.success("Response added"); setBody(""); qc.invalidateQueries({ queryKey: ["seller-assessment", userKey, assessmentId] }); },
+    mutationFn: async () => {
+      const r = (await sharingApi.sellerResponse(requirementId, { version_no: versionNo, body: body.trim(), assertion })) as { id: string };
+      if (file) {
+        const doc = await sharingApi.uploadSellerDocument(file);
+        await sharingApi.attachToResponse(r.id, [doc.id]);
+      }
+      return r;
+    },
+    onSuccess: () => { toast.success("Response added"); setBody(""); setFile(null); qc.invalidateQueries({ queryKey: ["seller-assessment", userKey, assessmentId] }); },
     onError: (e: Error) => toast.error(e.message),
   });
   return (
@@ -129,6 +138,10 @@ function ResponseForm({ requirementId, versionNo, assessmentId }: { requirementI
         <SelectContent>{Object.entries(ASSERTION_LABELS).map(([k, v]) => <SelectItem key={k} value={k}>{v}</SelectItem>)}</SelectContent>
       </Select>
       <Textarea id="seller-resp" rows={3} maxLength={4000} value={body} onChange={(e) => setBody(e.target.value)} />
+      <label className="block text-xs">
+        Attach a document (optional; PDF, .md or .txt — shown as seller-provided, never official knowledge)
+        <input type="file" accept=".pdf,.md,.txt" className="mt-1 block text-xs" onChange={(e) => setFile(e.target.files?.[0] ?? null)} />
+      </label>
       <p className="text-xs text-muted-foreground">Your response is attributed to you and does not change the system assessment.</p>
       <Button size="sm" onClick={() => m.mutate()} disabled={!body.trim() || m.isPending}>Submit response</Button>
     </div>

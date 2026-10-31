@@ -4,7 +4,8 @@ Base path `/api`. JSON in and out (snake_case); ids are UUIDs; timestamps ISO-86
 
 Errors always use `{"error": {"code", "message", "details"}}`. Ownership failures return **404** (never 403) so existence is not confirmed; wrong role returns 403 `FORBIDDEN_ROLE`.
 
-This file lists every route registered in the running app (generated from its OpenAPI schema on 2026-11-01).
+This file lists every route registered in the running app (78 routes), generated from its OpenAPI schema by `python scripts/generate_api_md.py`.
+
 
 ## health
 
@@ -73,7 +74,7 @@ Role: BUYER (owner)
 
 ## sharing
 
-Role: see per row
+Role: see 'Sharing route roles'
 
 | Method | Path | Request body |
 |---|---|---|
@@ -94,6 +95,20 @@ Role: see per row
 | GET | `/api/seller/assessments` | — |
 | GET | `/api/seller/assessments/{assessment_id}` | — |
 | GET | `/api/seller/follow-ups` | — |
+
+## p1
+
+Role: see 'Sharing route roles'
+
+| Method | Path | Request body |
+|---|---|---|
+| GET | `/api/assessments/{assessment_id}/report.xlsx` | — |
+| GET | `/api/documents/{document_id}/download` | — |
+| POST | `/api/follow-ups/{follow_up_id}/attachments` | AttachIn |
+| PATCH | `/api/follow-ups/{follow_up_id}/owner` | OwnerIn |
+| POST | `/api/seller-responses/{response_id}/attachments` | AttachIn |
+| POST | `/api/seller/documents` | Body_upload_seller_document_api_seller_documents_post |
+| GET | `/api/seller/team` | — |
 
 ## chat
 
@@ -151,7 +166,8 @@ Role: ADMIN
 
 - `GET /api/seller-orgs`, `POST /assessments/{id}/share`, `/unshare`, `GET .../shares`, `POST .../follow-ups`, `POST /follow-ups/{id}/messages`: BUYER (owner).
 - `GET /api/seller/assessments`, `GET /api/seller/assessments/{id}`, `GET /api/seller/follow-ups`, `POST /requirements/{id}/seller-response`, `POST /follow-ups/{id}/accept|reject|responses`: SELLER (organisation must hold an unrevoked share).
-- `GET /assessments/{id}/report.pdf`, `GET .../follow-ups`, `GET /follow-ups/{id}`, `POST /follow-ups/{id}/close`: BUYER owner or SELLER with a share.
+- `GET /assessments/{id}/report.pdf`, `GET /assessments/{id}/report.xlsx`, `GET .../follow-ups`, `GET /follow-ups/{id}`, `POST /follow-ups/{id}/close`: BUYER owner or SELLER with a share.
+- P1: `POST /api/seller/documents` (SELLER; PDF, .md or .txt, never indexed), `POST /api/seller-responses/{id}/attachments` and `POST /api/follow-ups/{id}/attachments` (SELLER), `PATCH /api/follow-ups/{id}/owner` and `GET /api/seller/team` (SELLER), `GET /api/documents/{id}/download` (uploading seller org, or the buyer who owns the assessment it is attached to).
 
 ## Stable error codes
 
