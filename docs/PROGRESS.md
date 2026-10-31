@@ -57,3 +57,17 @@
 - UI: admin dashboard (live counts, queue, audit), ticket detail (trace, redacted context with warning, answer editor with preview, sources, privacy checkbox, status-aware actions), resolved-knowledge tab (supersede, revoke), and My questions with chat status polling. Typecheck, lint and build pass, and the dashboard screenshot was checked.
 
 **Pending (needs LLM_API_KEY):** the manual end-to-end demonstration through the UI. Ticket creation requires the chat pipeline.
+
+## 2026-11-01 00:55 IST — G4 Requirement intake ✅ (real-LLM extraction check pending the key)
+**Works (verified by command output):**
+- Models and migration `0005_g4`: assessments, uploaded_documents, requirements (REQ-### display ids, seq never reused), append-only requirement_revisions, change_proposals. FKs deferred from earlier gates were added.
+- RequirementService is the only mutation path. Every change writes a revision, bumps `requirement_set_revision`, turns ANALYZED into STALE and audits. While ANALYZING it returns 409 `JOB_IN_PROGRESS`.
+- PDF upload: magic bytes and content type (415), size while streaming (413), page limit (422), encrypted (422), malformed (422), SCANNED status with the exact message, generated storage names, text-only extraction (no rendering).
+- Extraction job: page-bounded windows of at most 12,000 chars with `[[PAGE n]]` markers, verbatim or rapidfuzz page location (`quote_verified`), token_sort dedupe ≥ 92, a cap of 60, and progress reporting.
+- Intake chat: proposals stored PENDING. Apply only on click, with `STALE_PROPOSAL` detection. The air-gapped-to-hybrid instruction becomes a REMOVE plus an ADD (HIGH).
+- Guided form: deterministic deployment and scale requirements, LLM extraction for free-text fields with per-field priority. Resubmission only touches changed or cleared fields.
+- `make_demo_pdfs.py`: FinBank_Requirements.pdf (3 pages, 1,969 extractable characters) and the scanned copy (0 characters).
+- `pytest`: 75 passed. This includes all §15.3 item 1 and 2 tests plus intake, chat proposals, stale proposals, ANALYZING lock, display ids, `test_buyer_cannot_read_other_buyers_assessment` and `test_seller_cannot_modify_requirements`.
+- UI: buyer dashboard with a new-assessment dialog, and the workspace Requirements tab (PDF drop zone with scanned alert and job progress, intake chat with diff proposal cards, zod guided form with priorities, review table with inline edit, selects, source tooltip with unverified warning, clarification "Keep as written", confirm, remove, restore, history drawer, add row, confirm all, sticky counts footer). Typecheck, lint and build pass, and a screenshot with real uploaded documents was checked.
+
+**Pending (needs LLM_API_KEY):** the G4 check that the demo PDF yields at least seven requirements, with one flagged for clarification.

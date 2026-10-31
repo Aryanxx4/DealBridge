@@ -266,3 +266,115 @@ export interface MyTicket {
   occurrence_count: number;
   answer: { text: string; label: string; approved_at: string; version: number } | null;
 }
+
+export type AssessmentStatus = "DRAFT" | "ANALYZING" | "ANALYZED" | "STALE";
+export type Priority = "CRITICAL" | "HIGH" | "MEDIUM" | "LOW" | "NOT_SPECIFIED";
+export type RequirementCategory =
+  | "FUNCTIONAL_CAPABILITY"
+  | "DEPLOYMENT_INFRASTRUCTURE"
+  | "DATA_SOVEREIGNTY_RESIDENCY"
+  | "SECURITY_ACCESS_CONTROL"
+  | "INTEGRATION_COMPATIBILITY"
+  | "PERFORMANCE_SCALABILITY"
+  | "AVAILABILITY_RELIABILITY"
+  | "COMPLIANCE_GOVERNANCE"
+  | "COST_OPERATIONS"
+  | "OTHER";
+
+export const CATEGORY_LABELS: Record<RequirementCategory, string> = {
+  FUNCTIONAL_CAPABILITY: "Functional capability",
+  DEPLOYMENT_INFRASTRUCTURE: "Deployment and infrastructure",
+  DATA_SOVEREIGNTY_RESIDENCY: "Data sovereignty and residency",
+  SECURITY_ACCESS_CONTROL: "Security and access control",
+  INTEGRATION_COMPATIBILITY: "Integration and compatibility",
+  PERFORMANCE_SCALABILITY: "Performance and scalability",
+  AVAILABILITY_RELIABILITY: "Availability and reliability",
+  COMPLIANCE_GOVERNANCE: "Compliance and governance",
+  COST_OPERATIONS: "Cost and operations",
+  OTHER: "Other",
+};
+
+export const PRIORITY_LABELS: Record<Priority, string> = { CRITICAL: "Critical", HIGH: "High", MEDIUM: "Medium", LOW: "Low", NOT_SPECIFIED: "Not specified" };
+
+export interface Assessment {
+  id: string;
+  title: string;
+  status: AssessmentStatus;
+  context: { organisation_name?: string; industry?: string; use_case?: string };
+  intake_form: Record<string, unknown> | null;
+  requirement_set_revision: number;
+  latest_version_no: number;
+  requirement_count: number;
+  confirmed_count: number;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface UploadedDocument {
+  id: string;
+  original_filename: string;
+  size_bytes: number;
+  page_count: number;
+  sha256: string;
+  extraction_status: "OK" | "SCANNED" | "EMPTY" | "MALFORMED";
+  extraction_message: string | null;
+  created_at: string;
+}
+
+export interface Requirement {
+  id: string;
+  display_id: string;
+  seq: number;
+  original_text: string;
+  normalized_text: string;
+  category: RequirementCategory;
+  priority: Priority;
+  priority_basis: string | null;
+  source_type: "PDF" | "CHAT" | "FORM" | "MANUAL";
+  source_reference: { document_id?: string; filename?: string; page?: number | null; quote?: string; quote_verified?: boolean; field_key?: string; field_label?: string; message_id?: string };
+  buyer_confirmed: boolean;
+  needs_clarification: boolean;
+  clarifying_question: string | null;
+  clarification_waived: boolean;
+  is_removed: boolean;
+  removed_at: string | null;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface RequirementRevision {
+  revision_no: number;
+  change_type: string;
+  changes: Record<string, { before: unknown; after: unknown } | string>;
+  actor: string | null;
+  origin: string;
+  assessment_revision: number;
+  created_at: string;
+}
+
+export interface ProposedOp {
+  op: "ADD" | "UPDATE" | "REMOVE";
+  target_display_id: string | null;
+  normalized_text: string | null;
+  category: RequirementCategory | null;
+  priority: Priority | null;
+  source_quote: string;
+  target_snapshot?: { normalized_text: string };
+}
+
+export interface ChangeProposal {
+  id: string;
+  status: "PENDING" | "APPLIED" | "DISMISSED";
+  ops: ProposedOp[];
+  applied_op_indexes: number[];
+  result: { changed: { op: string; display_id: string; text: string }[] } | null;
+  message_id: string | null;
+}
+
+export interface IntakeMessage {
+  id: string;
+  role: "USER" | "ASSISTANT";
+  content: string;
+  structured?: { clarifying_questions?: string[]; assumptions_noted?: string[] } | null;
+  created_at: string;
+}
