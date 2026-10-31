@@ -175,3 +175,46 @@ def raise_for_message(message_id: uuid.UUID, user: User = Depends(get_current_us
     am.structured = st | {"ticket_linked": out.linked}
     db.commit()
     return MessageOut.of(am, out.ticket, out.linked)
+
+
+@router.get("/tickets")
+def my_tickets(user: User = Depends(get_current_user), db: Session = Depends(get_db)):
+    """Tickets the caller created or is linked to. Published tickets include the approved answer."""
+    from app.models.chat import TicketOccurrence
+    from app.models.knowledge import KnowledgeRecord
+
+    linked = select(TicketOccurrence.ticket_id).where(TicketOccurrence.user_id == user.id)
+    rows = db.scalars(
+        select(Ticket).where((Ticket.created_by == user.id) | (Ticket.id.in_(linked))).order_by(Ticket.created_at.desc())
+    ).all()
+    out = []
+    for t in rows:
+        item = {
+            "id": str(t.id),
+            "display_id": t.display_id,
+            "question": t.original_question if t.created_by == user.id else t.normalised_question,
+            "status": t.status,
+            "created_at": t.created_at,
+            "occurrence_count": t.occurrence_count,
+            "answer": None,
+        }
+        if t.status == "PUBLISHED" and t.published_knowledge_id:
+            rec = db.get(KnowledgeRecord, t.published_knowledge_id)
+            if rec is not None and rec.validity != "ACTIVE":
+                rec = (
+                    db.scalar(
+                        select(KnowledgeRecord).where(
+                            KnowledgeRecord.knowledge_group_id == rec.knowledge_group_id, KnowledgeRecord.validity == "ACTIVE"
+                        )
+                    )
+                    or rec
+                )
+            if rec is not None and rec.validity != "REVOKED":
+                item["answer"] = {
+                    "text": rec.answer,
+                    "label": "Expert-verified answer",
+                    "approved_at": rec.approved_at,
+                    "version": rec.version,
+                }
+        out.append(item)
+    return out

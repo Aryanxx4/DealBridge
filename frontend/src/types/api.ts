@@ -163,3 +163,106 @@ export interface ChatSessionDetail extends ChatSession {
   messages: ChatMessage[];
   privacy_notice: string;
 }
+
+export interface TicketSummary {
+  id: string;
+  display_id: string;
+  normalised_question: string;
+  category: string;
+  status: TicketStatus;
+  priority: "LOW" | "MEDIUM" | "HIGH";
+  reason: string;
+  occurrence_count: number;
+  created_at: string;
+  updated_at: string;
+  assigned_to: string | null;
+}
+
+export interface TraceHit {
+  collection: "OFFICIAL" | "RESOLVED";
+  knowledge_id: string;
+  chunk_id: string;
+  title: string;
+  heading_path: string;
+  score: number;
+  excerpt: string;
+}
+
+export interface TicketDetail extends TicketSummary {
+  original_question: string;
+  context_excerpt: { role: string; content: string }[];
+  retrieval_trace: {
+    classification?: Record<string, unknown>;
+    thresholds?: Record<string, number>;
+    hits?: TraceHit[];
+    decision?: string;
+    duplicate_check?: Record<string, unknown>;
+    faithfulness?: Record<string, unknown>;
+  } | null;
+  related_knowledge_ids: string[];
+  linked_to_assessment: boolean;
+  occurrences: { user: string | null; question_text: string; created_at: string }[];
+  created_by: string | null;
+  proposed_answer: string | null;
+  proposed_by: string | null;
+  proposed_by_id: string | null;
+  proposed_at: string | null;
+  supporting_sources: { title: string; url: string | null; note: string | null }[];
+  internal_notes: string | null;
+  reviewed_by: string | null;
+  reviewer_note: string | null;
+  reviewed_at: string | null;
+  resolved_at: string | null;
+  publish_error: string | null;
+  published_knowledge_id: string | null;
+  published_version: number | null;
+  close_reason: string | null;
+  allowed_actions: string[];
+  allow_self_approval: boolean;
+}
+
+export interface Dashboard {
+  tickets: { open: number; in_review: number; awaiting_approval: number; approved_unpublished: number; published: number; rejected: number; closed: number };
+  published_knowledge_records: number;
+  official_files_indexed: number;
+  official_chunks: number | null;
+  resolved_points: number | null;
+}
+
+export interface AuditRow {
+  id: string;
+  action: string;
+  entity_type: string;
+  entity_id: string | null;
+  actor: string | null;
+  actor_role: string | null;
+  created_at: string;
+}
+
+export interface ResolvedRecord {
+  id: string;
+  knowledge_group_id: string;
+  version: number;
+  question_normalised: string;
+  answer: string;
+  category: string;
+  validity: "ACTIVE" | "SUPERSEDED" | "REVOKED";
+  status_reason: string | null;
+  index_status: "PENDING" | "INDEXED" | "FAILED";
+  indexed_at: string | null;
+  author: string;
+  approver: string;
+  approved_at: string;
+  ticket_display_id: string | null;
+  supporting_references: { title: string; url: string | null; note: string | null }[];
+}
+
+export interface MyTicket {
+  id: string;
+  display_id: string;
+  question: string;
+  status: TicketStatus;
+  created_at: string;
+  occurrence_count: number;
+  answer: { text: string; label: string; approved_at: string; version: number } | null;
+}

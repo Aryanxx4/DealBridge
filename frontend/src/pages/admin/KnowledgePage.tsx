@@ -2,6 +2,7 @@ import { useSearchParams } from "react-router-dom";
 import { RequireRole } from "@/components/layout/RequireRole";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { OfficialKnowledgeTab } from "./OfficialKnowledgeTab";
+import { ResolvedKnowledgeTab } from "./ResolvedKnowledgeTab";
 
 export function KnowledgePage() {
   const [params, setParams] = useSearchParams();
@@ -16,7 +17,11 @@ export function KnowledgePage() {
         <Tabs value={tab} onValueChange={(v) => setParams({ tab: v }, { replace: true })}>
           <TabsList>
             <TabsTrigger value="official">Official knowledge</TabsTrigger>
+            <TabsTrigger value="resolved">Resolved knowledge</TabsTrigger>
           </TabsList>
+          <TabsContent value="resolved">
+            <ResolvedKnowledgeTab />
+          </TabsContent>
           <TabsContent value="official">
             <OfficialKnowledgeTab />
           </TabsContent>

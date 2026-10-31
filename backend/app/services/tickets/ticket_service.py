@@ -26,21 +26,26 @@ class TicketOutcome:
     trace: dict
 
 
-def _org_names(db: Session, user: User, conversation: Conversation | None) -> list[str]:
+def org_names_for_user(db: Session, user: User, assessment_id=None) -> list[str]:
+    """Names to redact: the user's organisation and the assessment's stated organisation name."""
     names = []
     org = db.get(Organization, user.organization_id)
     if org:
         names.append(org.name)
-    if conversation and conversation.assessment_id:
+    if assessment_id:
         try:
             from app.models.assessment import Assessment  # available from G4
 
-            a = db.get(Assessment, conversation.assessment_id)
+            a = db.get(Assessment, assessment_id)
             if a and (a.context or {}).get("organisation_name"):
                 names.append(a.context["organisation_name"])
         except ImportError:
             pass
     return names
+
+
+def _org_names(db: Session, user: User, conversation: Conversation | None) -> list[str]:
+    return org_names_for_user(db, user, conversation.assessment_id if conversation else None)
 
 
 def context_excerpt(db: Session, conversation: Conversation, orgs: list[str], upto_message: Message | None = None) -> list[dict]:

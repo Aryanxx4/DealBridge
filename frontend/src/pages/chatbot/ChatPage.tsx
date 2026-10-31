@@ -16,8 +16,11 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Textarea } from "@/components/ui/textarea";
 import { useIdentity, useUserKey } from "@/hooks/useIdentity";
 import { cn } from "@/lib/utils";
+import { myQuestionsApi } from "@/services/admin";
 import { chatApi } from "@/services/chat";
-import type { ChatMessage } from "@/types/api";
+import type { ChatMessage, TicketStatus } from "@/types/api";
+
+const FINAL: TicketStatus[] = ["PUBLISHED", "CLOSED", "REJECTED"];
 
 const MAX = 2000;
 const PRIVACY = "Questions I cannot verify are shared with the product team for review. Your assessments and documents are not shared.";
@@ -89,8 +92,17 @@ export function ChatPage() {
     setFailed(null);
   };
 
-  if (!user) return <ErrorState error={new Error("Choose a demo identity to use the product chat.")} title="No identity selected" />;
   const messages = detail.data?.messages ?? [];
+  const hasOpenTicket = messages.some((m) => m.ticket && !FINAL.includes(m.ticket.status));
+  const myTickets = useQuery({
+    queryKey: ["my-tickets", userKey],
+    queryFn: myQuestionsApi.list,
+    enabled: !!user && hasOpenTicket,
+    refetchInterval: hasOpenTicket ? 10_000 : false,
+  });
+  const liveStatus = new Map(myTickets.data?.map((t) => [t.id, t.status]) ?? []);
+
+  if (!user) return <ErrorState error={new Error("Choose a demo identity to use the product chat.")} title="No identity selected" />;
   const showWelcome = !sessionId || (detail.isSuccess && messages.length === 0 && !pending);
 
   return (
@@ -146,7 +158,7 @@ export function ChatPage() {
               </div>
             </div>
           )}
-          {messages.map((m) => (m.role === "USER" ? <UserBubble key={m.id} text={m.content} /> : <AssistantMessage key={m.id} m={m} onOpenAssessment={() => navigate("/buyer")} />))}
+          {messages.map((m) => (m.role === "USER" ? <UserBubble key={m.id} text={m.content} /> : <AssistantMessage key={m.id} m={m} liveStatus={m.ticket ? liveStatus.get(m.ticket.id) : undefined} onOpenAssessment={() => navigate("/buyer")} />))}
           {pending && (
             <>
               <UserBubble text={pending} />
@@ -203,7 +215,7 @@ function UserBubble({ text }: { text: string }) {
   );
 }
 
-function AssistantMessage({ m, onOpenAssessment }: { m: ChatMessage; onOpenAssessment: () => void }) {
+function AssistantMessage({ m, liveStatus, onOpenAssessment }: { m: ChatMessage; liveStatus?: TicketStatus; onOpenAssessment: () => void }) {
   const userKey = useUserKey();
   const qc = useQueryClient();
   const [openSources, setOpenSources] = useState<string>("");
@@ -258,7 +270,7 @@ function AssistantMessage({ m, onOpenAssessment }: { m: ChatMessage; onOpenAsses
           <span>
             Product team reference <strong>{m.ticket.display_id}</strong>
           </span>
-          <TicketStatusBadge status={m.ticket.status} />
+          <TicketStatusBadge status={liveStatus ?? m.ticket.status} />
           <Link to="/chat/questions" className="ml-auto text-xs font-medium text-primary hover:underline">
             View in My questions
           </Link>

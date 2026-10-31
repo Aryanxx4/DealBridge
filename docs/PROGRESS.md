@@ -44,3 +44,16 @@
 - Chat UI: sessions, suggested questions, cited answers with [n] buttons, sources accordion, partial/unverified/ticket cards and the privacy footer. Typecheck, lint and build pass, and the empty state was checked in a headless Chrome screenshot.
 
 **Pending (needs LLM_API_KEY):** the manual G2 check that a real question returns cited, quote-verified evidence and that an unanswerable question returns the unverified message plus a ticket.
+
+## 2026-11-01 00:30 IST — G3 Dynamic knowledge loop ✅ (manual demo with a real LLM pending the key)
+**Works (verified by command output):**
+- `knowledge_records` is versioned per group, with a partial unique index allowing one ACTIVE row per group. The Qdrant point id equals the record id.
+- Publish is synchronous and idempotent: PENDING, then embed and upsert, then INDEXED. Ticket PUBLISHED, epoch +1 and an audit entry follow. On failure the ticket stays APPROVED with `publish_error` and returns 502 `PUBLISH_INDEX_FAILED`, and `/publish` retries safely.
+- Lifecycle: supersede creates version n+1 and marks the old version SUPERSEDED in PostgreSQL and in the payload. Revoke sets REVOKED via `set_payload`; the point is kept and filtered out.
+- The admin ticket state machine is enforced server-side. Invalid transitions return 409 `INVALID_STATE` with the allowed transitions. The privacy checkbox and a 40-character minimum are required. Self-approval is guarded by config.
+- Global knowledge holds only a **redacted** `question_original`. This resolves the conflict between §8.5 and R6 in favour of R6.
+- `pytest`: 56 passed. This includes `test_dynamic_knowledge_loop_end_to_end`, which uses real embeddings and Qdrant: a differently worded repeat question returns EXPERT_VERIFIED citing the new point, and My questions shows the answer. It also includes the rejected, unapproved, revoked, superseded, publish-failure-retry, collections-separate and payload-no-private-data tests, plus privacy, self-approval and non-admin tests.
+- `scripts/reindex_knowledge.py` ran: official 89 chunks re-upserted into a recreated collection, resolved re-embedded from PostgreSQL.
+- UI: admin dashboard (live counts, queue, audit), ticket detail (trace, redacted context with warning, answer editor with preview, sources, privacy checkbox, status-aware actions), resolved-knowledge tab (supersede, revoke), and My questions with chat status polling. Typecheck, lint and build pass, and the dashboard screenshot was checked.
+
+**Pending (needs LLM_API_KEY):** the manual end-to-end demonstration through the UI. Ticket creation requires the chat pipeline.

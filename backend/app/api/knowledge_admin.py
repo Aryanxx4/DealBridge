@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+import uuid
+
 from fastapi import APIRouter, BackgroundTasks, Depends
 from sqlalchemy import select
 from sqlalchemy.orm import Session
@@ -104,3 +106,67 @@ def reindex(background: BackgroundTasks, recreate: bool = False, user: User = De
     db.commit()
     background.add_task(run_job, job.id, _reindex_job(recreate or STATE.reindex_required))
     return JobAccepted(job_id=job.id)
+
+
+# ---- Resolved (expert) knowledge -------------------------------------------------------------
+from pydantic import BaseModel, Field  # noqa: E402
+
+from app.models.chat import Ticket  # noqa: E402
+from app.models.knowledge import KnowledgeRecord  # noqa: E402
+from app.services.knowledge import lifecycle  # noqa: E402
+
+
+def _record(db: Session, r: KnowledgeRecord) -> dict:
+    from app.models.identity import User as U
+
+    t = db.get(Ticket, r.ticket_id) if r.ticket_id else None
+    return {
+        "id": str(r.id),
+        "knowledge_group_id": str(r.knowledge_group_id),
+        "version": r.version,
+        "question_normalised": r.question_normalised,
+        "answer": r.answer,
+        "category": r.category,
+        "validity": r.validity,
+        "status_reason": r.status_reason,
+        "index_status": r.index_status,
+        "indexed_at": r.indexed_at,
+        "author": (db.get(U, r.author_user_id) or U(display_name="?")).display_name,
+        "approver": (db.get(U, r.approver_user_id) or U(display_name="?")).display_name,
+        "approved_at": r.approved_at,
+        "ticket_display_id": t.display_id if t else None,
+        "supporting_references": r.supporting_references,
+    }
+
+
+@router.get("")
+def list_resolved(validity: str | None = None, _: User = Depends(admin_only), db: Session = Depends(get_db)):
+    q = select(KnowledgeRecord).order_by(KnowledgeRecord.approved_at.desc())
+    if validity:
+        q = q.where(KnowledgeRecord.validity.in_(validity.split(",")))
+    return [_record(db, r) for r in db.scalars(q.limit(200))]
+
+
+class SupersedeIn(BaseModel):
+    answer: str = Field(min_length=40, max_length=8000)
+    question_normalised: str | None = Field(default=None, min_length=5, max_length=1000)
+    category: str | None = None
+    supporting_references: list[dict] | None = None
+    privacy_confirmed: bool
+
+
+@router.post("/{record_id}/supersede")
+def supersede(record_id: uuid.UUID, body: SupersedeIn, user: User = Depends(admin_only), db: Session = Depends(get_db)):
+    if not body.privacy_confirmed:
+        raise AppError("VALIDATION_ERROR", "Confirm that the answer contains no buyer-private or customer-specific information.", 422)
+    new = lifecycle.supersede(db, record_id, user, body.answer, body.question_normalised, body.category, body.supporting_references)
+    return _record(db, new)
+
+
+class RevokeIn(BaseModel):
+    reason: str = Field(min_length=3, max_length=1000)
+
+
+@router.post("/{record_id}/revoke")
+def revoke(record_id: uuid.UUID, body: RevokeIn, user: User = Depends(admin_only), db: Session = Depends(get_db)):
+    return _record(db, lifecycle.revoke(db, record_id, user, body.reason))
