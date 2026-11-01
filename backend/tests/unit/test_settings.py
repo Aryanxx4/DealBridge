@@ -61,3 +61,13 @@ def test_hosted_database_urls_use_psycopg_driver(monkeypatch, given):
     _clear_env(monkeypatch)
     s = load_settings(_env_file=None, **{**BASE, "DATABASE_URL": given})
     assert s.DATABASE_URL == "postgresql+psycopg://u:p@h:5432/db"
+
+
+def test_pasted_values_are_trimmed(monkeypatch):
+    _clear_env(monkeypatch)
+    s = load_settings(
+        _env_file=None,
+        **{**BASE, "QDRANT_URL": " https://x.cloud.qdrant.io \n", "QDRANT_API_KEY": " key ", "LLM_API_KEY": "csk-abc\n"},
+    )
+    assert s.QDRANT_URL == "https://x.cloud.qdrant.io"
+    assert s.QDRANT_API_KEY == "key" and s.LLM_API_KEY == "csk-abc"

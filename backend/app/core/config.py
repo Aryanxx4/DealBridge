@@ -95,6 +95,16 @@ class Settings(BaseSettings):
             raise ValueError("EMBEDDING_PROVIDER must be 'fastembed' (the only supported provider)")
         return v
 
+    @field_validator(
+        "APP_SECRET_KEY", "DATABASE_URL", "QDRANT_URL", "QDRANT_API_KEY",
+        "LLM_API_KEY", "LLM_BASE_URL", "LLM_MODEL", "LLM_FAST_MODEL", "LLM_REASONING_EFFORT", "FRONTEND_ORIGIN",
+        mode="before",
+    )
+    @classmethod
+    def _strip(cls, v):
+        # Values pasted into hosting dashboards often carry stray spaces or newlines.
+        return v.strip() if isinstance(v, str) else v
+
     @field_validator("APP_SECRET_KEY", "DATABASE_URL", "QDRANT_URL")
     @classmethod
     def _non_empty(cls, v: str) -> str:
