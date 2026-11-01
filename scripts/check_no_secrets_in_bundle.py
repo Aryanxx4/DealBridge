@@ -2,7 +2,7 @@
 
 1. Scans frontend/dist (build it first) for API-key prefixes, the literal variable names LLM_API_KEY, QDRANT_API_KEY and
    APP_SECRET_KEY, and the current values of those variables from the environment / .env.
-2. Runs `git grep` over tracked files for key prefixes (sk-ant-, and DashScope-style sk- keys of real length).
+2. Runs `git grep` over tracked files for Anthropic, OpenAI-compatible and OpenRouter API-key prefixes.
 """
 
 import re

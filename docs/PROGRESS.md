@@ -15,7 +15,7 @@
 
 **Missing / notes:**
 - PostgreSQL is published on host port 5433, because a pre-existing local PostgreSQL owns 5432.
-- LLM-dependent features await the owner's Qwen key.
+- LLM-dependent features are configured for OpenRouter; live model calls have not yet been verified.
 
 ## 2026-10-31 23:55 IST — G1 Official knowledge ✅
 **Works (verified by command output):**
@@ -35,7 +35,7 @@
 
 ## 2026-11-01 00:05 IST — G2 Grounded chatbot ✅ (real-LLM checks pending the key)
 **Works (verified by command output):**
-- Qwen client over the OpenAI-compatible API. Structured output uses a forced function call (`enable_thinking=false`), Pydantic validation, one validation retry, tenacity retries, then 503 `LLM_UNAVAILABLE`. A FakeLLM is used for tests only.
+- OpenAI-compatible LLM client. Structured output uses a forced function call, Pydantic validation, one validation retry, tenacity retries, then 503 `LLM_UNAVAILABLE`. A FakeLLM is used for tests only.
 - Pipeline: classify → route (small talk, out of scope, requirement redirect) → retrieve both collections with the mandatory filter and threshold → generate → deterministic verbatim quote verification (retry once with feedback, then discard) → explicit-certification rule → faithfulness check → decide → persist with retrieval trace.
 - Tickets: redaction, document-embedding duplicate check, LLM same-intent check, link (occurrence count +1, priority HIGH at 3) or create, and the context excerpt.
 - `pytest`: 45 passed. This includes the RAG tests (answerable with verified citations, fabricated quote discarded, unanswerable creates a ticket, certification needs explicit evidence, general labelled general, infrastructure failure creates no ticket for both the LLM and Qdrant, dedupe links, dedupe respects qualifiers, partial raises a ticket only on click, unfaithful becomes unverified, small talk and redirect), `test_buyer_cannot_use_other_buyers_chat_session`, and `test_every_suggested_question_gets_a_cited_answer` against the real 44-file bundle.
@@ -99,7 +99,7 @@
 **Works (verified by command output):**
 - `make backend-install`, `make frontend-install`, `make reset-demo` (refuses without `--yes`; truncates app tables, recreates the resolved collection, keeps 89 official points) all ran.
 - `make test`: **112 passed, 1 deselected** (the real-LLM eval), then typecheck, lint and build pass. `make check-secrets`: passed (60 dist files plus tracked files).
-- QwenClient unit tests with a stubbed OpenAI client cover the forced tool payload (`enable_thinking=false`), the fast or main model choice, the validation retry, the temperature and json_object fallbacks, transient-error retries, and auth error mapping.
+- OpenAI-compatible client unit tests with a stubbed OpenAI client cover the forced tool payload, the fast or main model choice, the validation retry, the temperature and json_object fallbacks, transient-error retries, and auth error mapping.
 - `tests/eval/test_prompt_injection.py` (marker `llm`) collects and skips without a key.
 - 768 px check: no page-level horizontal scroll; tables scroll inside their cards; the header was tightened.
 - Docs: README implementation guide (status, architecture, setup, run, env table, OKF, calibration, tests, troubleshooting, limitations), docs/API.md (71 routes, generated from the running app's OpenAPI), demo/DEMO_SCRIPT.md (observed vs pending, honestly marked), docs/FINAL_REPORT.md.

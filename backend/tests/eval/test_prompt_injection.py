@@ -1,6 +1,6 @@
 """Real-LLM prompt-injection evaluation (marker `llm`; skipped without LLM_API_KEY).
 
-Uses the real Qwen model for extraction and judging, with real embeddings and Qdrant. Asserts that an injected
+Uses the configured real LLM for extraction and judging, with real embeddings and Qdrant. Asserts that an injected
 instruction is not extracted as a requirement and that no requirement becomes SUPPORTED without verified evidence.
 """
 

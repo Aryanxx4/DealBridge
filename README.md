@@ -1194,7 +1194,7 @@ The sections below describe the implementation in this repository (hackCbs9). Th
 - P1 extras: Excel export, seller document uploads (labelled seller-provided, never indexed), internal follow-up owners, a changed-only version comparison and dashboard filters.
 - `make test`: 118 backend tests pass, plus frontend typecheck, lint and build. `make check-secrets` passes. A clean clone was verified: `git clone`, then the setup commands below, then `make test` and `make check-secrets` all succeeded.
 
-**Not yet verified with the real language model.** The Qwen API key has not been provided yet. Without it every LLM endpoint returns 503 `LLM_NOT_CONFIGURED` and the UI says so. The real-LLM demo run (`demo/DEMO_SCRIPT.md`) and `make test-llm` are pending. See `docs/FINAL_REPORT.md`, "Needs the user".
+**Not yet verified with the real language model.** OpenRouter is configured locally, but the live model integration has not yet been verified. The real-LLM demo run (`demo/DEMO_SCRIPT.md`) and `make test-llm` are pending. See `docs/FINAL_REPORT.md`, "Needs the user".
 
 ## Architecture
 
@@ -1204,7 +1204,7 @@ The sections below describe the implementation in this repository (hackCbs9). Th
         ▼                                                             ▼
  FastAPI (sync) ── RequirementService · RAG pipeline · judge + guardrails · publish ──► Qdrant
     │      │        jobs (BackgroundTasks + jobs table)                                 ├─ official_product_knowledge
-    │      └──► Qwen (DashScope OpenAI-compatible API, forced tool calls)              └─ resolved_query_knowledge
+    │      └──► OpenRouter (OpenAI-compatible API, forced tool calls)                  └─ resolved_query_knowledge
     │      └──► fastembed BAAI/bge-small-en-v1.5 (local, 384 d)      (filter: approval_status=approved AND validity_status=ACTIVE)
     ▼
  PostgreSQL 16: users, assessments, requirements, revisions, versions, evidence, tickets, knowledge_records,
@@ -1219,7 +1219,7 @@ The sections below describe the implementation in this repository (hackCbs9). Th
 
 ## Setup
 ```bash
-cp .env.example .env          # then set LLM_API_KEY to your Qwen (DashScope) key; never commit .env
+cp .env.example .env          # then set LLM_API_KEY to your OpenRouter key; never commit .env
 make up                       # postgres (host port 5433) + qdrant (6333/6334), waits until healthy
 make backend-install          # creates backend/.venv and installs pinned requirements
 make frontend-install         # npm ci
@@ -1242,10 +1242,10 @@ Pick an identity with the dropdown in the top bar (Priya, buyer · Daniel, buyer
 | `DATABASE_URL` | yes | `postgresql+psycopg://dealbridge:dealbridge@localhost:5433/dealbridge` | PostgreSQL (psycopg 3) |
 | `QDRANT_URL` | yes | `http://localhost:6333` | Qdrant REST |
 | `APP_SECRET_KEY` | yes | `change-me` | Required setting; never logged |
-| `LLM_API_KEY` | for LLM features | empty | Qwen / DashScope key. Empty means LLM endpoints return 503 `LLM_NOT_CONFIGURED` |
-| `LLM_PROVIDER` | no | `qwen` | Only `qwen` is accepted |
-| `LLM_BASE_URL` | no | `https://dashscope-intl.aliyuncs.com/compatible-mode/v1` | OpenAI-compatible endpoint |
-| `LLM_MODEL` / `LLM_FAST_MODEL` | no | `qwen3.8-max` / `qwen3.8-flash` | Main and fast models |
+| `LLM_API_KEY` | for LLM features | empty | OpenRouter key. Empty means LLM endpoints return 503 `LLM_NOT_CONFIGURED` |
+| `LLM_PROVIDER` | no | `openrouter` | Only `openrouter` is accepted |
+| `LLM_BASE_URL` | no | `https://openrouter.ai/api/v1` | OpenRouter OpenAI-compatible endpoint |
+| `LLM_MODEL` / `LLM_FAST_MODEL` | no | `openai/gpt-4.1` / `openai/gpt-4.1` | Main and fast models |
 | `LLM_TIMEOUT_SECONDS`, `LLM_FAST_TIMEOUT_SECONDS`, `LLM_MAX_RETRIES` | no | 60 / 20 / 2 | Timeouts and retries |
 | `EMBEDDING_PROVIDER`, `EMBEDDING_MODEL`, `EMBEDDING_DIMENSION`, `FASTEMBED_CACHE_DIR` | no | `fastembed`, `BAAI/bge-small-en-v1.5`, 384, `./.cache/fastembed` | Local embeddings (changing them requires a reindex) |
 | `RETRIEVAL_MIN_SCORE`, `RESOLVED_REUSE_MIN_SCORE` | no | 0.60 / 0.70 | Calibrated thresholds (see below) |

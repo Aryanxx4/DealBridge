@@ -1,4 +1,4 @@
-"""QwenClient behaviour with a stubbed OpenAI client (no network)."""
+"""OpenAI-compatible client behaviour with a stubbed OpenAI client (no network)."""
 
 import json
 from types import SimpleNamespace
@@ -10,8 +10,8 @@ from pydantic import BaseModel
 
 from app.core.config import load_settings
 from app.core.errors import LLMOutputError, LLMUnavailable
-from app.services.llm.client import QwenClient
-from app.services.llm.structured import inline_schema
+from app.services.llm.client import OpenAICompatibleClient
+from app.services.llm.structured import inline_schema, parse_arguments
 
 
 class Out(BaseModel):
@@ -61,7 +61,7 @@ class Stub:
 
 
 def _client(responses):
-    c = QwenClient(_settings())
+    c = OpenAICompatibleClient(_settings())
     stub = Stub(responses)
     c._clients = {"main": stub, "fast": stub}
     return c, stub
@@ -77,15 +77,15 @@ def test_forced_tool_call_payload_and_parse():
     out = c.complete_structured("main", "sys", [{"role": "user", "content": "q"}], Out, "my_tool", 100, 0.0)
     assert out == Out(answer="ok", score=3)
     p = stub.payloads[0]
-    assert p["model"] == "qwen3.8-max" and p["tool_choice"] == {"type": "function", "function": {"name": "my_tool"}}
-    assert p["extra_body"] == {"enable_thinking": False} and p["messages"][0] == {"role": "system", "content": "sys"}
+    assert p["model"] == "openai/gpt-4.1" and p["tool_choice"] == {"type": "function", "function": {"name": "my_tool"}}
+    assert "extra_body" not in p and p["messages"][0] == {"role": "system", "content": "sys"}
     assert p["tools"][0]["function"]["parameters"]["required"] == ["answer", "score"]
 
 
 def test_fast_kind_uses_fast_model():
     c, stub = _client([_tool_resp({"answer": "ok", "score": 1})])
     c.complete_structured("fast", "s", [], Out, "t", 10, 0.0)
-    assert stub.payloads[0]["model"] == "qwen3.8-flash"
+    assert stub.payloads[0]["model"] == "openai/gpt-4.1"
 
 
 def test_validation_error_retried_once_then_rejected():
@@ -136,3 +136,31 @@ def test_inline_schema_has_no_refs():
     s = inline_schema(Nested)
     assert "$ref" not in json.dumps(s) and "$defs" not in s
     assert s["properties"]["items"]["items"]["properties"]["score"]["type"] == "integer"
+
+
+def test_stringified_nested_list_is_decoded():
+    # Some providers (for example Qwen on Cerebras) send a nested list as a JSON string.
+    raw = json.dumps({"items": json.dumps([{"answer": "a", "score": 1}])})
+    out = parse_arguments(raw, Nested)
+    assert out.items[0].answer == "a" and out.items[0].score == 1
+
+
+def test_plain_string_where_list_expected_is_still_rejected():
+    from pydantic import ValidationError
+
+    with pytest.raises(ValidationError):
+        parse_arguments(json.dumps({"items": "not a list"}), Nested)
+
+
+def test_string_field_containing_json_is_left_alone():
+    out = parse_arguments(json.dumps({"answer": "[1, 2]", "score": 3}), Out)
+    assert out.answer == "[1, 2]"
+
+
+def test_reasoning_effort_sent_only_when_configured():
+    s = _settings().model_copy(update={"LLM_REASONING_EFFORT": "none"})
+    c = OpenAICompatibleClient(s)
+    stub = Stub([_tool_resp({"answer": "ok", "score": 1})])
+    c._clients = {"main": stub, "fast": stub}
+    c.complete_structured("fast", "sys", [{"role": "user", "content": "q"}], Out, "my_tool", 100, 0.0)
+    assert stub.payloads[0]["extra_body"] == {"reasoning_effort": "none"}

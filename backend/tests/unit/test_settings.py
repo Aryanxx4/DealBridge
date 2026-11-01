@@ -22,7 +22,9 @@ def test_missing_required_vars_are_all_listed(monkeypatch):
 def test_valid_settings_load(monkeypatch):
     _clear_env(monkeypatch)
     s = load_settings(_env_file=None, **BASE)
-    assert s.LLM_PROVIDER == "qwen"
+    assert s.LLM_PROVIDER == "openrouter"
+    assert s.LLM_BASE_URL == "https://openrouter.ai/api/v1"
+    assert s.LLM_MODEL == s.LLM_FAST_MODEL == "openai/gpt-4.1"
     assert s.EMBEDDING_DIMENSION == 384
     assert not s.llm_configured
 
@@ -30,7 +32,7 @@ def test_valid_settings_load(monkeypatch):
 def test_rejects_other_llm_provider(monkeypatch):
     _clear_env(monkeypatch)
     with pytest.raises(ConfigError) as exc:
-        load_settings(_env_file=None, LLM_PROVIDER="openai", **BASE)
+        load_settings(_env_file=None, LLM_PROVIDER="qwen", **BASE)
     assert "LLM_PROVIDER" in str(exc.value)
 
 

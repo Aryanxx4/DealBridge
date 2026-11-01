@@ -39,15 +39,17 @@ class Settings(BaseSettings):
     QDRANT_OFFICIAL_COLLECTION: str = "official_product_knowledge"
     QDRANT_RESOLVED_COLLECTION: str = "resolved_query_knowledge"
 
-    # LLM (single provider: qwen via DashScope OpenAI-compatible API)
-    LLM_PROVIDER: str = "qwen"
+    # LLM (single provider: OpenRouter OpenAI-compatible API)
+    LLM_PROVIDER: str = "openrouter"
     LLM_API_KEY: str = ""
-    LLM_BASE_URL: str = "https://dashscope-intl.aliyuncs.com/compatible-mode/v1"
-    LLM_MODEL: str = "qwen3.8-max"
-    LLM_FAST_MODEL: str = "qwen3.8-flash"
+    LLM_BASE_URL: str = "https://openrouter.ai/api/v1"
+    LLM_MODEL: str = "openai/gpt-4.1"
+    LLM_FAST_MODEL: str = "openai/gpt-4.1"
     LLM_TIMEOUT_SECONDS: float = 60
     LLM_FAST_TIMEOUT_SECONDS: float = 20
     LLM_MAX_RETRIES: int = 2
+    # Optional: sent as `reasoning_effort` (e.g. "none" so thinking models don't spend the token budget on reasoning). Empty = not sent.
+    LLM_REASONING_EFFORT: str = ""
     # Test-only: selects the scripted FakeLLMClient. Refused outside APP_ENV=test.
     LLM_USE_FAKE: bool = False
 
@@ -80,8 +82,8 @@ class Settings(BaseSettings):
     @field_validator("LLM_PROVIDER")
     @classmethod
     def _provider(cls, v: str) -> str:
-        if v != "qwen":
-            raise ValueError("LLM_PROVIDER must be 'qwen' (the only supported provider)")
+        if v != "openrouter":
+            raise ValueError("LLM_PROVIDER must be 'openrouter' (the only supported provider)")
         return v
 
     @field_validator("EMBEDDING_PROVIDER")

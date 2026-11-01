@@ -1,6 +1,6 @@
 # Final report
 
-Date: 2026-11-01. Repository: `hackCbs9`. All results below come from commands run in this repository against real PostgreSQL 16, Qdrant v1.20.0 and the local `BAAI/bge-small-en-v1.5` embedding model. LLM-dependent behaviour is verified with a scripted FakeLLM, because **no Qwen API key has been provided yet**.
+Date: 2026-11-01. Repository: `hackCbs9`. All results below come from commands run in this repository against real PostgreSQL 16, Qdrant v1.20.0 and the local `BAAI/bge-small-en-v1.5` embedding model. LLM-dependent behaviour is verified with a scripted FakeLLM; live OpenRouter model calls have not been verified.
 
 ## What works
 Legend: ✅ verified by the named test or observation · ⏳ implemented and tested with a scripted LLM, live LLM run pending the key.
@@ -117,5 +117,5 @@ The specification was found: **Open Knowledge Format v0.2** (GoogleCloudPlatform
 `make test`: **118 passed, 1 deselected** (the real-LLM eval), then frontend typecheck, lint and build pass. Coverage of `app/services` from `pytest --cov=app`: 88% before the LLM-client unit tests were added. Highlights: guardrails 100%, analyze 100%, publish 99%, chunker 99%, judge 98%, retrieval/search 98%, rag/pipeline 93%, pdf_report 94%, okf_ingest 86%. `ingestion/html_text.py` is curation tooling exercised by `scripts/verify_knowledge_excerpts.py`, not by pytest.
 
 ## Needs the user
-1. **Qwen API key.** Put it in `.env` as `LLM_API_KEY=...` and restart `make dev-backend`. Do not paste it into chat. Defaults are `LLM_BASE_URL=https://dashscope-intl.aliyuncs.com/compatible-mode/v1`, `LLM_MODEL=qwen3.8-max` and `LLM_FAST_MODEL=qwen3.8-flash`. Change them if your account uses a different region or models. Then run: the demo script (`demo/DEMO_SCRIPT.md`, recording the observed statuses), `make test-llm`, and the G2, G4 and G5 manual checks listed in `docs/PROGRESS.md`.
+1. **Live OpenRouter verification.** The local `.env` is configured with the OpenRouter endpoint and model. Rotate the key pasted into chat and update `LLM_API_KEY` locally, then restart `make dev-backend`. Run the demo script (`demo/DEMO_SCRIPT.md`, recording observed statuses), `make test-llm`, and the G2, G4 and G5 manual checks listed in `docs/PROGRESS.md`.
 2. **Deployment.** Choose the GitHub repository visibility and provide or authorise the GitHub and Vercel accounts (the `gh` and `vercel` CLIs are not installed). Vercel can host the frontend. The backend (FastAPI, PostgreSQL, Qdrant, local embeddings) needs separate hosting.

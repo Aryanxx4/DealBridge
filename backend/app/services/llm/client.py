@@ -1,10 +1,8 @@
-"""LLM access. Single provider: Qwen (Alibaba Cloud Model Studio) via its OpenAI-compatible API.
+"""LLM access through OpenRouter's OpenAI-compatible API.
 
-Structured output is forced: the response schema is a function (tool) and `tool_choice` names it. Qwen only
-honours a forced tool_choice with thinking disabled, so `enable_thinking=False` is sent in `extra_body`.
-If the endpoint rejects forced tool choice, the client falls back to `response_format=json_object` with the
-schema embedded in the system prompt. Either way the output is validated with Pydantic, retried once with the
-validation error, then rejected (LLMOutputError).
+Structured output is forced with a function tool call. If the endpoint rejects forced tool choice, the client
+falls back to `response_format=json_object` with the schema embedded in the system prompt. Either way the output
+is validated with Pydantic, retried once with the validation error, then rejected (LLMOutputError).
 """
 
 from __future__ import annotations
@@ -50,7 +48,7 @@ def _retryable(exc: BaseException) -> bool:
     return isinstance(exc, openai.APIStatusError) and exc.status_code >= 500
 
 
-class QwenClient:
+class OpenAICompatibleClient:
     def __init__(self, settings: Settings):
         import openai
 
@@ -93,7 +91,9 @@ class QwenClient:
 
     def _payload(self, kind, system, messages, output_model, tool_name, max_tokens, temperature) -> dict:
         schema = inline_schema(output_model)
-        payload: dict = {"model": self._model(kind), "max_tokens": max_tokens, "extra_body": {"enable_thinking": False}}
+        payload: dict = {"model": self._model(kind), "max_tokens": max_tokens}
+        if self.s.LLM_REASONING_EFFORT:
+            payload["extra_body"] = {"reasoning_effort": self.s.LLM_REASONING_EFFORT}
         if not self.omit_temperature:
             payload["temperature"] = temperature
         if self.json_mode_fallback:
@@ -207,7 +207,7 @@ class FakeLLMClient:
 
 
 _fake: FakeLLMClient | None = None
-_real: QwenClient | None = None
+_real: OpenAICompatibleClient | None = None
 
 
 def get_fake_llm() -> FakeLLMClient:
@@ -230,5 +230,5 @@ def get_llm() -> LLMClient:
     if not s.LLM_API_KEY.strip():
         raise LLMNotConfigured()
     if _real is None:
-        _real = QwenClient(s)
+        _real = OpenAICompatibleClient(s)
     return _real
