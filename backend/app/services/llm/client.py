@@ -159,7 +159,15 @@ class OpenAICompatibleClient:
                 return parse_arguments(raw, output_model)
             except (ValidationError, ValueError, json.JSONDecodeError) as exc:
                 last_error = str(exc)[:1500]
-                log.warning("llm output failed validation", extra={"tool": tool_name, "try": validation_try + 1})
+                log.warning(
+                    "llm output failed validation",
+                    extra={
+                        "tool": tool_name,
+                        "try": validation_try + 1,
+                        "finish_reason": getattr(resp.choices[0], "finish_reason", None),
+                        "error": last_error[:300],
+                    },
+                )
                 convo = [
                     *messages,
                     {

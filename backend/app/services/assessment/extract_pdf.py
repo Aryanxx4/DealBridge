@@ -106,7 +106,7 @@ def run_extraction(db: Session, assessment_id: uuid.UUID, document_id: uuid.UUID
     actor = RS.Actor(user, "PDF")
     for i, window in enumerate(windows, start=1):
         progress(i - 1, len(windows), f"Reading part {i} of {len(windows)}")
-        result = llm.complete_structured("main", P.SYSTEM, P.build_messages(window), P.ExtractionResult, P.TOOL, 3000, 0.0)
+        result = llm.complete_structured("main", P.SYSTEM, P.build_messages(window), P.ExtractionResult, P.TOOL, 8000, 0.0)
         for item in result.requirements:
             if is_duplicate(item.normalized_text, existing):
                 dupes += 1

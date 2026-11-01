@@ -110,7 +110,7 @@ def submit(db: Session, a: Assessment, user, form: dict) -> dict:
             if cat
             else (f" {PERF_HINT}" if key == "performance_availability" else " Choose the category.")
         )
-        result = get_llm().complete_structured("main", P.SYSTEM, P.build_messages(new_v, hint), P.ExtractionResult, P.TOOL, 3000, 0.0)
+        result = get_llm().complete_structured("main", P.SYSTEM, P.build_messages(new_v, hint), P.ExtractionResult, P.TOOL, 8000, 0.0)
         for item in result.requirements:
             category = cat or item.category
             if key == "performance_availability" and item.category not in ("PERFORMANCE_SCALABILITY", "AVAILABILITY_RELIABILITY"):
