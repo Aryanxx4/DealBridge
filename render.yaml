@@ -1,10 +1,11 @@
 # Render Blueprint: one web service (backend + built frontend in a single container) and a PostgreSQL database.
-# Qdrant runs on Qdrant Cloud (free tier); its URL and API key are entered in the Render dashboard.
+# Qdrant runs on Qdrant Cloud (free tier, AWS eu-west-1); its URL and API key are entered in the Render dashboard.
+# Region frankfurt keeps the server close to the Qdrant cluster (several vector searches per request).
 # Deploy: Render dashboard -> New -> Blueprint -> pick this repository.
 databases:
   - name: dealbridge-db
     plan: free
-    region: singapore
+    region: frankfurt
     databaseName: dealbridge
     user: dealbridge
     ipAllowList: []  # reachable only from services in this Render account
@@ -14,7 +15,7 @@ services:
     name: dealbridge
     runtime: docker
     plan: free
-    region: singapore
+    region: frankfurt
     dockerfilePath: ./Dockerfile
     healthCheckPath: /api/health
     autoDeploy: true
