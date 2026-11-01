@@ -54,3 +54,10 @@ def test_secrets_never_in_repr(monkeypatch):
     _clear_env(monkeypatch)
     s = load_settings(_env_file=None, LLM_API_KEY="sk-supersecretvalue123", **BASE)
     assert "sk-supersecretvalue123" in s.secret_values()
+
+
+@pytest.mark.parametrize("given", ["postgresql://u:p@h:5432/db", "postgres://u:p@h:5432/db"])
+def test_hosted_database_urls_use_psycopg_driver(monkeypatch, given):
+    _clear_env(monkeypatch)
+    s = load_settings(_env_file=None, **{**BASE, "DATABASE_URL": given})
+    assert s.DATABASE_URL == "postgresql+psycopg://u:p@h:5432/db"

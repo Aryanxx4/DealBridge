@@ -1281,6 +1281,15 @@ make check-secrets   # builds the frontend and scans dist/ and tracked files for
 make test-llm        # real-LLM prompt-injection evaluation (skipped when LLM_API_KEY is empty)
 ```
 
+## Deploy (Render, single container)
+The `Dockerfile` builds the frontend and serves it from the FastAPI backend (one URL, no CORS). `scripts/start.sh` runs migrations, creates the Qdrant collections, ingests the OKF bundle and seeds the demo identities on every start (all idempotent), then starts uvicorn. Peak memory in a 512 MB container was about 344 MB.
+
+1. Create a free Qdrant Cloud cluster and an API key.
+2. Render dashboard -> New -> Blueprint -> select this repository (`render.yaml` defines the web service and a PostgreSQL database).
+3. Enter `QDRANT_URL`, `QDRANT_API_KEY` and `LLM_API_KEY` when asked, then deploy.
+
+Test the image locally first: `docker build -t dealbridge .` then run it with `DATABASE_URL`, `QDRANT_URL`, `APP_SECRET_KEY` and `LLM_API_KEY` set. On the free plan the service sleeps after 15 minutes idle and uploaded files are not kept across restarts.
+
 ## Troubleshooting
 - **Docker not running / `make up` hangs:** start the runtime (`colima start`), then `docker compose ps`. If `docker compose` is unknown, add `"cliPluginsExtraDirs": ["/opt/homebrew/lib/docker/cli-plugins"]` to `~/.docker/config.json`.
 - **Port 5432 already in use:** the container is published on **5433** by default (`POSTGRES_HOST_PORT`) because a local PostgreSQL often owns 5432.

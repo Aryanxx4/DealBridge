@@ -50,6 +50,8 @@ class Settings(BaseSettings):
     LLM_MAX_RETRIES: int = 2
     # Optional: sent as `reasoning_effort` (e.g. "none" so thinking models don't spend the token budget on reasoning). Empty = not sent.
     LLM_REASONING_EFFORT: str = ""
+    # Optional: built frontend directory (e.g. ./frontend/dist) served by the backend for single-container deploys. Empty = API only.
+    STATIC_DIR: str = ""
     # Test-only: selects the scripted FakeLLMClient. Refused outside APP_ENV=test.
     LLM_USE_FAKE: bool = False
 
@@ -98,6 +100,15 @@ class Settings(BaseSettings):
     def _non_empty(cls, v: str) -> str:
         if not v or not v.strip():
             raise ValueError("must not be empty")
+        return v
+
+    @field_validator("DATABASE_URL")
+    @classmethod
+    def _psycopg_driver(cls, v: str) -> str:
+        # Hosting providers (e.g. Render) hand out postgres:// or postgresql:// URLs; use the psycopg 3 driver.
+        for prefix in ("postgres://", "postgresql://"):
+            if v.startswith(prefix):
+                return "postgresql+psycopg://" + v[len(prefix):]
         return v
 
     # ---- derived helpers -------------------------------------------------

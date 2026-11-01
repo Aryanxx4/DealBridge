@@ -89,7 +89,31 @@ def create_app(skip_startup_checks: bool = False) -> FastAPI:
 
     for r in _routers():
         app.include_router(r, prefix="/api")
+    if s.STATIC_DIR:
+        _serve_frontend(app, s.resolve_path(s.STATIC_DIR))
     return app
+
+
+def _serve_frontend(app: FastAPI, dist) -> None:
+    """Serve the built single-page app from the same origin (single-container deploys)."""
+    from fastapi.responses import FileResponse
+    from fastapi.staticfiles import StaticFiles
+
+    index = dist / "index.html"
+    if not index.is_file():
+        raise RuntimeError(f"STATIC_DIR is set but {index} does not exist. Build the frontend first.")
+    if (dist / "assets").is_dir():
+        app.mount("/assets", StaticFiles(directory=dist / "assets"), name="assets")
+    root = dist.resolve()
+
+    @app.get("/{path:path}", include_in_schema=False)
+    async def spa(path: str):
+        if path.startswith("api/") or path == "api":
+            return JSONResponse(envelope("NOT_FOUND", "Not found."), status_code=404)
+        f = (dist / path).resolve()
+        if path and f.is_file() and root in f.parents:
+            return FileResponse(f)
+        return FileResponse(index)
 
 
 def app_factory() -> FastAPI:  # used by uvicorn --factory
