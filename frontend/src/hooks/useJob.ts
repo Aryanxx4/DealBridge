@@ -26,16 +26,19 @@ export function useJob(jobId: string | null | undefined) {
   };
 }
 
+// Job ids whose completion was already handled in this page session. Kept outside the component so a
+// remount (e.g. switching back to the Requirements tab) does not replay the toast and tab switch.
+const handledJobs = new Set<string>();
+
 /** Calls onFinish exactly once per job id when the job reaches SUCCEEDED or FAILED. */
 export function useJobFinished(job: Job | undefined, onFinish: (job: Job) => void) {
-  const handled = useRef<string | null>(null);
   const cb = useRef(onFinish);
   useEffect(() => {
     cb.current = onFinish;
   });
   useEffect(() => {
-    if (job && (job.status === "SUCCEEDED" || job.status === "FAILED") && handled.current !== job.id) {
-      handled.current = job.id;
+    if (job && (job.status === "SUCCEEDED" || job.status === "FAILED") && !handledJobs.has(job.id)) {
+      handledJobs.add(job.id);
       cb.current(job);
     }
   }, [job]);
